@@ -8,6 +8,10 @@ public class Field : MonoBehaviour
     [Min(1)] public float height = 1;
     [Min(1)] public float width = 1;
 
+    //Instantiation mode of the crop rows.
+    public enum GenerationMode { LinearV1, LinearV2, RS_Curved}
+    public GenerationMode crops_rows_GenMode = GenerationMode.LinearV1;
+
     //space between rows
     public float crop_rows_average_spacing;
     public float crop_rows_spacing_random;
@@ -142,7 +146,20 @@ public class Field : MonoBehaviour
         
         CheckSceneForField();
         SpawnField();
-        SpawnPlants();
+
+        switch (crops_rows_GenMode)
+        {
+            case (GenerationMode.LinearV1):
+                SpawnPlants_LinearV1();
+                break;
+            case (GenerationMode.LinearV2):
+                SpawnPlants_LinearV2();
+                break;
+            //case (GenerationMode.RS_Curved):
+            //    SpawnPlants_();
+            //    break;
+        }
+            
         SpawnWeeds();
         PlaceLight();
         Render();
@@ -192,9 +209,9 @@ public class Field : MonoBehaviour
     }
 
     /// <summary>
-    /// Spawn the plants organized as rows on the field
+    /// Spawn the plants organized as rows on the field in a linear fashion v1
     /// </summary>
-    private void SpawnPlants()
+    private void SpawnPlants_LinearV1()
     {
         all_target_plants = new List<GameObject>();
 
@@ -233,6 +250,62 @@ public class Field : MonoBehaviour
             b += AveragePlusRandom(crop_rows_average_spacing, crop_rows_spacing_random) / Mathf.Cos(Mathf.Deg2Rad * crop_rows_average_direction) ;
         }
         
+    }
+
+    /// <summary>
+    /// Spawn the plants organized as rows on the field in a linear fashion v1
+    /// </summary>
+    private void SpawnPlants_LinearV2()
+    {
+        Debug.Log("SpawnPlants_LinearV2");
+        all_target_plants = new List<GameObject>();
+
+        float x_plant = 0;
+        float z_plant = 0;
+
+        float _rad = Mathf.Deg2Rad * ClampValueToMaxMin(AveragePlusRandom(crop_rows_average_direction, crop_rows_direction_random), 0, 45);
+        float a = Mathf.Tan(_rad);
+        float width_target = Random.Range((1-0.025f) * width * field_size - field_size / 2, width * field_size - field_size / 2);
+        float b = -a * width_target -field_size / 2;//the b parameter at which we should begin.
+        
+
+        while (b < height * field_size)
+        {
+            Debug.Log(b);
+
+            GameObject plant_row = Instantiate(plant_row_holder) as GameObject;
+            plant_row.transform.parent = instantiated_field_holder.transform;
+
+            x_plant = Mathf.Max(-b/a -field_size / 2, -field_size/2);
+            if (x_plant == -field_size / 2)
+            {
+                z_plant = b - field_size / 2;
+            }
+            else
+            {
+                z_plant = -field_size / 2;
+            }
+
+            float _hyp = AveragePlusRandom(crop_plants_average_spacing, crop_plants_spacing_random);
+            while (x_plant + Mathf.Cos(_rad) * _hyp < width * field_size - field_size / 2 &&
+                   z_plant + Mathf.Sin(_rad) * _hyp < height * field_size - field_size / 2)
+            {
+                x_plant += Mathf.Cos(_rad) * _hyp;
+                z_plant += Mathf.Sin(_rad) * _hyp;
+                
+                SpawnPlant(x_plant, z_plant, plant_row);
+                _hyp = AveragePlusRandom(crop_plants_average_spacing, crop_plants_spacing_random);
+            }
+
+            if (plant_row.transform.childCount == 0)
+            {
+                destroy(plant_row);
+            }
+
+            b += AveragePlusRandom(crop_rows_average_spacing, crop_rows_spacing_random) / Mathf.Cos(_rad);
+        }
+
+
     }
 
     /// <summary>

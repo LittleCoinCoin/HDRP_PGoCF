@@ -269,7 +269,7 @@ Material:
     - _UVDetailsMappingMask: {r: 1, g: 0, b: 0, a: 0}
     - _UVMappingMask: {r: 1, g: 0, b: 0, a: 0}
     - _UVMappingMaskEmissive: {r: 1, g: 0, b: 0, a: 0}
-    - _Vector2Tiling: {r: 1.8969443, g: 1.8969443, b: 0, a: 0}
+    - _Vector2Tiling: {r: 0.8440917, g: 0.8440917, b: 0, a: 0}
     - _Vector2TilingOffset: {r: 0, g: 0, b: 0, a: 0}
 --- !u!114 &1411926134974677737
 MonoBehaviour:

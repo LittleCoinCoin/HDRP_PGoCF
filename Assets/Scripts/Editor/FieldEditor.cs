@@ -46,15 +46,15 @@ public class FieldEditor : Editor
 
         EditorGUILayout.Space();
 
+        CropRowsParametersManager();
+
+        EditorGUILayout.Space();
+
         PlantParametersManager();
 
         EditorGUILayout.Space();
 
         WeedParametersManager();
-
-        EditorGUILayout.Space();
-
-        CropRowsParametersManager();
 
         EditorGUILayout.Space();
 
@@ -342,6 +342,8 @@ public class FieldEditor : Editor
                     "Introduces variability in the space between crops rows. This variability is introduced between two consecutive crops rows."));
 
                 }
+                EditorGUILayout.PropertyField(serializedObject.FindProperty("crops_rows_GenMode"),
+                    new GUIContent("Crop Rows Generation", "Selects which method to use to generate the crop rows of the field."));
             }
         }
         EditorGUILayout.EndFadeGroup();
