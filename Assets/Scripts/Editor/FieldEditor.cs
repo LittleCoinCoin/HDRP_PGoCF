@@ -147,8 +147,23 @@ public class FieldEditor : Editor
             {
                 EditorGUILayout.PropertyField(serializedObject.FindProperty("plant_ref"), new GUIContent("Plant 3D object", "The plant model."));
 
-                EditorGUILayout.PropertyField(serializedObject.FindProperty("plant_growing_probability"), new GUIContent("Growth probability",
+                EditorGUILayout.PropertyField(serializedObject.FindProperty("plant_growth_proba_distribution"),
+                new GUIContent("Plant Growth Mode", "Selects which method to use to decide whether the plant has grown."));
+
+                if (serializedObject.FindProperty("plant_growth_proba_distribution").enumValueIndex == 0)
+                {
+                    EditorGUILayout.PropertyField(serializedObject.FindProperty("plant_growing_probability"), new GUIContent("Growth probability",
                     "Probability that the plant is indeed instantiated on the surface of the field. It simulates whether the seed planted at the begining germinated."));
+                }
+                if (serializedObject.FindProperty("plant_growth_proba_distribution").enumValueIndex == 1)
+                {
+                    EditorGUILayout.PropertyField(serializedObject.FindProperty("X_Growth_Distribution"),
+                    new GUIContent("X-axis growth probability", "Probability that the plant is indeed instantiated on the surface of the field along the X axis."));
+
+                    EditorGUILayout.PropertyField(serializedObject.FindProperty("Z_Growth_Distribution"),
+                    new GUIContent("Z-axis growth probability", "Probability that the plant is indeed instantiated on the surface of the field along the Z axis."));
+
+                }
 
                 EditorGUILayout.PropertyField(serializedObject.FindProperty("plant_average_Yscale"),
                     new GUIContent("Average size", "Modifies the average scale of the \"Plant 3D object\" on the Y axis."));
@@ -167,14 +182,27 @@ public class FieldEditor : Editor
                         new GUIContent("Variability", "Introduces variability among plants in regards to their scale on the X and Z axis."));
 
                 }
-
-                EditorGUILayout.PropertyField(serializedObject.FindProperty("crop_plants_average_spacing"),
-                    new GUIContent("Average spacing", "Simulates the general space between plants in the same crops rows."));
-                using (new EditorGUI.IndentLevelScope())
+                switch (serializedObject.FindProperty("crops_rows_GenMode").enumValueIndex)
                 {
-                    EditorGUILayout.PropertyField(serializedObject.FindProperty("crop_plants_spacing_random"), new GUIContent("Variability",
-                    "Introduces variability in the space between plants in the same crops row. This variability is introduced between two consecutive plants."));
+                    case (0):
+                        EditorGUILayout.LabelField("Crop Rows Generation Mode: LinearV1");
+                        EditorGUILayout.PropertyField(serializedObject.FindProperty("crop_plants_average_spacing"),
+                        new GUIContent("Average spacing", "Simulates the general space between plants in the same crops rows."));
+                        using (new EditorGUI.IndentLevelScope())
+                        {
+                            EditorGUILayout.PropertyField(serializedObject.FindProperty("crop_plants_spacing_random"), new GUIContent("Variability",
+                            "Introduces variability in the space between plants in the same crops row. This variability is introduced between two consecutive plants."));
 
+                        }
+                        break;
+
+                    case (1):
+                        EditorGUILayout.LabelField("Crop Rows Generation Mode: Linear Seader Drill");
+                        EditorGUILayout.PropertyField(serializedObject.FindProperty("crop_plant_seader_drill_spacing"),
+                        new GUIContent("Spacing", "Simulates the mean space between plants in the same crop row of the seader drill."));
+                        EditorGUILayout.PropertyField(serializedObject.FindProperty("crop_plant_position_radius"),
+                        new GUIContent("Position radius", "Simulates the radius of the circle in which the plant will grow somewhere."));
+                        break;
                 }
             }
         }
@@ -326,6 +354,10 @@ public class FieldEditor : Editor
                 EditorGUILayout.PropertyField(serializedObject.FindProperty("plant_row_holder"), new GUIContent("Container",
                     "An empty game object witht the tag \"Plant_Row_Holder\" to contain all the plants instantiated during the generation of the crops row."));
 
+                EditorGUILayout.PropertyField(serializedObject.FindProperty("crops_rows_GenMode"),
+                new GUIContent("Crop Rows Generation", "Selects which method to use to generate the crop rows of the field."));
+
+
                 EditorGUILayout.PropertyField(serializedObject.FindProperty("crop_rows_average_direction"), new GUIContent("Average angle",
                     "Simulates the general orientation of the crops rows of the field"));
                 using (new EditorGUI.IndentLevelScope())
@@ -334,16 +366,33 @@ public class FieldEditor : Editor
                     "Introduces variability in the direction of the row. This variability is introduced between two consecutive plants of an identical row."));
                 }
 
-                EditorGUILayout.PropertyField(serializedObject.FindProperty("crop_rows_average_spacing"), new GUIContent("Average spacing",
-                    "Simulates the general space between crops rows."));
-                using (new EditorGUI.IndentLevelScope())
+                if (serializedObject.FindProperty("crops_rows_GenMode").enumValueIndex == 0)
                 {
-                    EditorGUILayout.PropertyField(serializedObject.FindProperty("crop_rows_spacing_random"), new GUIContent("Variability",
-                    "Introduces variability in the space between crops rows. This variability is introduced between two consecutive crops rows."));
+                    EditorGUILayout.PropertyField(serializedObject.FindProperty("crop_rows_average_spacing"), new GUIContent("Average spacing",
+                    "Simulates the general space between crops rows."));
+                    using (new EditorGUI.IndentLevelScope())
+                    {
+                        EditorGUILayout.PropertyField(serializedObject.FindProperty("crop_rows_spacing_random"), new GUIContent("Variability",
+                        "Introduces variability in the space between crops rows. This variability is introduced between two consecutive crops rows."));
 
+                    }
                 }
-                EditorGUILayout.PropertyField(serializedObject.FindProperty("crops_rows_GenMode"),
-                    new GUIContent("Crop Rows Generation", "Selects which method to use to generate the crop rows of the field."));
+                else
+                {
+                    EditorGUILayout.PropertyField(serializedObject.FindProperty("crop_rows_on_seeder_drill"),
+                    new GUIContent("Seeder Drill Width", "Gives the number of crop rows the seeder can plant."));
+
+                    EditorGUILayout.PropertyField(serializedObject.FindProperty("crop_rows_spacing_in_seader_drill"),
+                        new GUIContent("Seader spacing", "Simulates the space between two consecutive crop rows planted by the seader drill."));
+
+                    EditorGUILayout.PropertyField(serializedObject.FindProperty("crop_rows_average_spacing_between_seader_passes"),
+                        new GUIContent("Seader passes average spacing", "Simulates the mean space between two consecutive pass of the seader."));
+                    using (new EditorGUI.IndentLevelScope())
+                    {
+                        EditorGUILayout.PropertyField(serializedObject.FindProperty("crop_rows_spacing_between_seader_passes_random"),
+                            new GUIContent("Variability", "Introduces variability in the space between two consecutive seader passes."));
+                    }
+                }
             }
         }
         EditorGUILayout.EndFadeGroup();

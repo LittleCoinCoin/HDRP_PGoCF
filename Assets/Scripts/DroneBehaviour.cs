@@ -87,7 +87,9 @@ public class DroneBehaviour : MonoBehaviour
                                                       0,
                                                       (visionBoundaries[0] - visionBoundaries[1]));
 
-        Vector3 directionVector = new Vector3(_horizontal * x_overlapping, 0, _vertical * y_overlapping);
+        Vector3 directionVector = new Vector3(_horizontal * (1-x_overlapping),
+                                                0,
+                                                _vertical * (1-y_overlapping));
 
         Vector3 movementVector = Vector3.Scale(directionVector, visionBoundaries_lengths);
 
@@ -177,6 +179,7 @@ public class DroneBehaviour : MonoBehaviour
     /// </summary>
     public void AllImageCapture()
     {
+        
         StartPosition();
 
         float[] visionBoundaries = GetComponentInChildren<CameraVision>().VisionBoundariesOnField();
@@ -188,13 +191,14 @@ public class DroneBehaviour : MonoBehaviour
         float field_width = field_generator_ref.height * field_generator_ref.field_size;
 
         int y_steps = Mathf.RoundToInt((field_generator_ref.height * field_generator_ref.field_size - frustrum_height) /
-                                        ((frustrum_height) * y_overlapping));
-
+                                        (frustrum_height * (1-y_overlapping)));
+        
         int x_steps = Mathf.RoundToInt((field_generator_ref.width * field_generator_ref.field_size - frustrum_width) /
-                                        ((frustrum_width) * x_overlapping));
+                                        (frustrum_width * (1-x_overlapping)));
+        
 
-        //Debug.Log($"y_step is : {y_steps} ({field_generator_ref.height * field_generator_ref.field_size - frustrum_height} / {(frustrum_height) * y_overlapping})");
-        //Debug.Log($"x_step is : {x_steps} ({field_generator_ref.width * field_generator_ref.field_size - frustrum_width} / {(frustrum_width) * x_overlapping})");
+        //Debug.Log($"y_step is : {y_steps} ({field_generator_ref.height * field_generator_ref.field_size - frustrum_height} / {(frustrum_height) * (1 - y_overlapping)})");
+        //Debug.Log($"x_step is : {x_steps} ({field_generator_ref.width * field_generator_ref.field_size - frustrum_width} / {(frustrum_width) * (1 - x_overlapping)})");
         bool forward = true;
         int y_direction = 0;
         gameObject.GetComponentInChildren<CaptureImage>().counter = 0;

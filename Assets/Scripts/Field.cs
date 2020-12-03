@@ -9,16 +9,28 @@ public class Field : MonoBehaviour
     [Min(1)] public float width = 1;
 
     //Instantiation mode of the crop rows.
-    public enum GenerationMode { LinearV1, LinearV2, RS_Curved}
+    public enum GenerationMode { LinearV1, LinearSeaderDrill, RS_Curved}
     public GenerationMode crops_rows_GenMode = GenerationMode.LinearV1;
 
-    //space between rows
+    //Number of rows in the seeder drill
+    [Min(1)] public int crop_rows_on_seeder_drill;
+
+    //space between crop rows with Seader Drill
+    [Min(0)] public float crop_rows_spacing_in_seader_drill;
+    [Min(0)] public float crop_rows_average_spacing_between_seader_passes;
+    [Min(0)] public float crop_rows_spacing_between_seader_passes_random;
+
+    //space between rows for LinearV1
     public float crop_rows_average_spacing;
     public float crop_rows_spacing_random;
 
-    //space between plants in rows
+    //space between plants in rows for LinearV1
     public float crop_plants_average_spacing;
     public float crop_plants_spacing_random;
+
+    //plants randomized position with Seader Drill
+    public float crop_plant_seader_drill_spacing;
+    public float crop_plant_position_radius;
 
     //angle of the crop rows on the fields
     [Range(0f, 45f)] public float crop_rows_average_direction;
@@ -41,15 +53,22 @@ public class Field : MonoBehaviour
     //3D model of the plant
     public GameObject plant_ref;
 
-    //probability that a plant grows
+    //plant growth probability Mode
+    public enum PlantGrowthProbabilityDistribution {Constant, Custom_Curves}
+    public PlantGrowthProbabilityDistribution plant_growth_proba_distribution = PlantGrowthProbabilityDistribution.Constant;
+
+    //probability that a plant grows in the constant mode
     [Range(0f, 1f)] public float plant_growing_probability;
+
+    //plant growth probability according to CustomCurves
+    public AnimationCurve X_Growth_Distribution;
+    public AnimationCurve Z_Growth_Distribution;
 
     //scaling the size of the 3D model of the plant
     [Range(0f, 2f)] public float plant_average_Yscale = 1f;
     [Range(0f, 2f)] public float plant_Yscale_random = 0.1f;
     [Range(0f, 2f)] public float plant_average_radius = 1f;
     [Range(0f, 2f)] public float plant_radius_random = 0.1f;
-
 
     //List of the plants in the field
     public List<GameObject> all_target_plants;
@@ -152,8 +171,8 @@ public class Field : MonoBehaviour
             case (GenerationMode.LinearV1):
                 SpawnPlants_LinearV1();
                 break;
-            case (GenerationMode.LinearV2):
-                SpawnPlants_LinearV2();
+            case (GenerationMode.LinearSeaderDrill):
+                SpawnPlants_LinearSeaderDrill();
                 break;
             //case (GenerationMode.RS_Curved):
             //    SpawnPlants_();
@@ -253,11 +272,12 @@ public class Field : MonoBehaviour
     }
 
     /// <summary>
-    /// Spawn the plants organized as rows on the field in a linear fashion v1
+    /// This version simulates the seeder drill that spans several crop crows.
+    /// So, the direction and spacing of the crop rows are different only between
+    /// series of crop rows.
     /// </summary>
-    private void SpawnPlants_LinearV2()
+    private void SpawnPlants_LinearSeaderDrill()
     {
-        Debug.Log("SpawnPlants_LinearV2");
         all_target_plants = new List<GameObject>();
 
         float x_plant = 0;
@@ -267,12 +287,10 @@ public class Field : MonoBehaviour
         float a = Mathf.Tan(_rad);
         float width_target = Random.Range((1-0.025f) * width * field_size - field_size / 2, width * field_size - field_size / 2);
         float b = -a * width_target -field_size / 2;//the b parameter at which we should begin.
-        
 
+        int crop_rows_counter = 1;
         while (b < height * field_size)
         {
-            Debug.Log(b);
-
             GameObject plant_row = Instantiate(plant_row_holder) as GameObject;
             plant_row.transform.parent = instantiated_field_holder.transform;
 
@@ -285,27 +303,34 @@ public class Field : MonoBehaviour
             {
                 z_plant = -field_size / 2;
             }
-
-            float _hyp = AveragePlusRandom(crop_plants_average_spacing, crop_plants_spacing_random);
-            while (x_plant + Mathf.Cos(_rad) * _hyp < width * field_size - field_size / 2 &&
-                   z_plant + Mathf.Sin(_rad) * _hyp < height * field_size - field_size / 2)
+            while (x_plant + Mathf.Cos(_rad) * crop_plant_seader_drill_spacing < width * field_size - field_size / 2 &&
+                   z_plant + Mathf.Sin(_rad) * crop_plant_seader_drill_spacing < height * field_size - field_size / 2)
             {
-                x_plant += Mathf.Cos(_rad) * _hyp;
-                z_plant += Mathf.Sin(_rad) * _hyp;
+                x_plant += Mathf.Cos(_rad) * crop_plant_seader_drill_spacing;
+                z_plant += Mathf.Sin(_rad) * crop_plant_seader_drill_spacing;
                 
                 SpawnPlant(x_plant, z_plant, plant_row);
-                _hyp = AveragePlusRandom(crop_plants_average_spacing, crop_plants_spacing_random);
             }
 
             if (plant_row.transform.childCount == 0)
             {
                 destroy(plant_row);
             }
-
-            b += AveragePlusRandom(crop_rows_average_spacing, crop_rows_spacing_random) / Mathf.Cos(_rad);
+            
+            if (crop_rows_counter == crop_rows_on_seeder_drill)
+            {
+                _rad = Mathf.Deg2Rad * ClampValueToMaxMin(AveragePlusRandom(crop_rows_average_direction, crop_rows_direction_random), 0, 45);
+                a = Mathf.Tan(_rad);
+                b += AveragePlusRandom(crop_rows_average_spacing_between_seader_passes,
+                                        crop_rows_spacing_between_seader_passes_random) / Mathf.Cos(_rad);
+                crop_rows_counter = 1;
+            }
+            else
+            {
+                b += crop_rows_spacing_in_seader_drill;
+                crop_rows_counter++;
+            }
         }
-
-
     }
 
     /// <summary>
@@ -317,9 +342,42 @@ public class Field : MonoBehaviour
     /// <remarks>Takes into account the growth probability of the plant</remarks>
     private void SpawnPlant(float _x, float _z, GameObject _parent_row)
     {
-        if (Random.Range(0f, 1f) < plant_growing_probability)
+        bool spawn_plant = false;
+
+        switch (plant_growth_proba_distribution)
         {
-            GameObject plant = Instantiate(plant_ref, new Vector3(_x, 0, _z), Quaternion.identity) as GameObject;
+            case PlantGrowthProbabilityDistribution.Constant:
+                if (Random.Range(0f, 1f) < plant_growing_probability)
+                {
+                    spawn_plant = true;
+                }
+                break;
+
+            case PlantGrowthProbabilityDistribution.Custom_Curves:
+                float x_normalized_coord = (_x + field_size / 2) / (field_size * width);
+                float z_normalized_coord = (_z + field_size / 2) / (field_size * height);
+
+                float test_value = Random.Range(0f, 1f);
+
+                spawn_plant = (test_value < X_Growth_Distribution.Evaluate(x_normalized_coord)) &&
+                              (test_value < Z_Growth_Distribution.Evaluate(z_normalized_coord));
+                break;
+        }
+
+        if (spawn_plant)
+        {
+            GameObject plant = Instantiate(plant_ref, Vector3.zero, Quaternion.identity) as GameObject;
+            if (crops_rows_GenMode == GenerationMode.LinearV1)
+            {
+                plant.transform.position = new Vector3(_x, 0, _z);
+            }
+            else
+            {
+                plant.transform.position = new Vector3(_x + Random.Range(-crop_plant_position_radius, crop_plant_position_radius),
+                                                        0,
+                                                        _z + Random.Range(-crop_plant_position_radius, crop_plant_position_radius));
+            }
+            
             float _plant_radius = ClampValueToMaxMin(AveragePlusRandom(plant_average_radius, plant_radius_random), 0f, 2f);
             float _plant_size = ClampValueToMaxMin(AveragePlusRandom(plant_average_Yscale, plant_Yscale_random), 0f, 2f);
             plant.transform.localScale = new Vector3( _plant_radius, _plant_size, _plant_radius);

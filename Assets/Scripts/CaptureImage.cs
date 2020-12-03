@@ -217,8 +217,7 @@ public class CaptureImage : MonoBehaviour
                 field_generator_ref.SaveParameters(RootFolder + TimeFolder);
                 parameter_saved = true;
             }
-
-
+            
             filename = uniqueFilename(captureWidth, captureHeight);
             TakeScreenshot(filename);
 
