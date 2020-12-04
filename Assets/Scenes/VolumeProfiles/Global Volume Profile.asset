@@ -174,7 +174,7 @@ MonoBehaviour:
     showEyeDropper: 1
   aerosolMaximumAltitude:
     m_OverrideState: 1
-    m_Value: 8289.296
+    m_Value: 100
     min: 0
   aerosolAnisotropy:
     m_OverrideState: 0
@@ -364,8 +364,8 @@ MonoBehaviour:
     showAlpha: 0
     showEyeDropper: 1
   tint:
-    m_OverrideState: 0
-    m_Value: {r: 1, g: 1, b: 1, a: 1}
+    m_OverrideState: 1
+    m_Value: {r: 0.33962265, g: 0.22385737, b: 0.19063725, a: 1}
     hdr: 1
     showAlpha: 0
     showEyeDropper: 1
@@ -393,8 +393,8 @@ MonoBehaviour:
     m_OverrideState: 1
     m_Value: 50
   albedo:
-    m_OverrideState: 0
-    m_Value: {r: 1, g: 1, b: 1, a: 1}
+    m_OverrideState: 1
+    m_Value: {r: 1, g: 0.7261403, b: 0.514151, a: 1}
     hdr: 0
     showAlpha: 1
     showEyeDropper: 1
@@ -404,7 +404,7 @@ MonoBehaviour:
     min: 1
   enableVolumetricFog:
     m_OverrideState: 1
-    m_Value: 0
+    m_Value: 1
   anisotropy:
     m_OverrideState: 0
     m_Value: 0
