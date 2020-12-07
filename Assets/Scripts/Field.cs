@@ -8,8 +8,18 @@ public class Field : MonoBehaviour
     [Min(1)] public float height = 1;
     [Min(1)] public float width = 1;
 
+    //Whether the synthetic datasets are generated for one field at one time or one field
+    //at multiple times of the crop development
+    public enum FieldDevelopmentMonitoringMode { Unique, Multiple }
+    public FieldDevelopmentMonitoringMode field_dev_monitoring_mode = FieldDevelopmentMonitoringMode.Unique;
+    [Min(1)] public int field_monitoring_iterations = 1;
+
+    //parameters to decide which growth stage of the field time monitoring we should reach
+    [Min(1)] public int target_growth_stage;
+    private int counter_growth_stages;
+
     //Instantiation mode of the crop rows.
-    public enum GenerationMode { LinearV1, LinearSeaderDrill, RS_Curved}
+    public enum GenerationMode { LinearV1, LinearSeaderDrill }//, RS_Curved}
     public GenerationMode crops_rows_GenMode = GenerationMode.LinearV1;
 
     //Number of rows in the seeder drill
@@ -50,28 +60,32 @@ public class Field : MonoBehaviour
     //Empty GameObject to be parent of all the plants gameobjects making a crop row
     public GameObject plant_row_holder;
 
-    //3D model of the plant
-    public GameObject plant_ref;
+    //3D models of the target plants accross different growth stages
+    public GameObject[] diff_growth_stages_plant_refs = new GameObject[1];
 
     //plant growth probability Mode
     public enum PlantGrowthProbabilityDistribution {Constant, Custom_Curves}
-    public PlantGrowthProbabilityDistribution plant_growth_proba_distribution = PlantGrowthProbabilityDistribution.Constant;
+    public PlantGrowthProbabilityDistribution[] plant_growth_proba_distribution = new PlantGrowthProbabilityDistribution[1];
 
     //probability that a plant grows in the constant mode
-    [Range(0f, 1f)] public float plant_growing_probability;
+    [Range(0f, 1f)] public float[] plant_growing_probability = new float[1];
 
     //plant growth probability according to CustomCurves
-    public AnimationCurve X_Growth_Distribution;
-    public AnimationCurve Z_Growth_Distribution;
+    public AnimationCurve[] X_Growth_Distribution = new AnimationCurve[1];
+    public AnimationCurve[] Z_Growth_Distribution = new AnimationCurve[1];
 
     //scaling the size of the 3D model of the plant
-    [Range(0f, 2f)] public float plant_average_Yscale = 1f;
-    [Range(0f, 2f)] public float plant_Yscale_random = 0.1f;
-    [Range(0f, 2f)] public float plant_average_radius = 1f;
-    [Range(0f, 2f)] public float plant_radius_random = 0.1f;
+    [Range(0f, 2f)] public float[] plant_average_Yscale = new float[1];
+    [Range(0f, 2f)] public float[] plant_Yscale_random = new float[1];
+    [Range(0f, 2f)] public float[] plant_average_radius = new float[1];
+    [Range(0f, 2f)] public float[] plant_radius_random = new float[1];
 
     //List of the plants in the field
     public List<GameObject> all_target_plants;
+    public List<Vector2> all_plants_coordinates;
+    public bool[] all_plants_living_status;
+    public List<int> all_plants_rows_indeces;
+
 
     //3D model of the Weed
     public GameObject weed_ref;
@@ -100,7 +114,6 @@ public class Field : MonoBehaviour
     private int _weed_PN_Texture_rescale = 140;
     public bool _weed_PN_enablePreview = false;
     public bool _weed_PN_autoPreview = false;
-    
 
     //reference to the scene light to simulate the position of the sun
     public GameObject directional_light_ref;
@@ -122,8 +135,6 @@ public class Field : MonoBehaviour
     [Range(0, 0.99f)] public float image_capture_vertical_overlapping = 0;
     public Vector2Int image_size = new Vector2Int(1920, 1080);
 
-    //public bool autoUdate_droneParameters = false;
-
     //boolean to manage the rendering mode of the field: reality or labelling
     public bool labellingMode = false;
     public bool castShadow_labellingMode = false;
@@ -137,6 +148,9 @@ public class Field : MonoBehaviour
     public bool open_sun_parameters = true;
     public bool open_rendering_parameters = true;
     public bool open_drone_parameters = true;
+
+    //Plant Parameters Growth Stages open/close boolean array
+    public bool[] open_PGS_parameters = new bool[1];
 
     private void Start()
     {
@@ -166,19 +180,31 @@ public class Field : MonoBehaviour
         CheckSceneForField();
         SpawnField();
 
+        //Generate initial plants coordinates
         switch (crops_rows_GenMode)
         {
-            case (GenerationMode.LinearV1):
-                SpawnPlants_LinearV1();
+            case GenerationMode.LinearV1:
+                GeneratePlantCoordinates_LinearV1();
+                //SpawnPlants_LinearV1();
                 break;
-            case (GenerationMode.LinearSeaderDrill):
-                SpawnPlants_LinearSeaderDrill();
+            case GenerationMode.LinearSeaderDrill:
+                GeneratePlantCoordinates_LinearSeaderDrill();
+                //SpawnPlants_LinearSeaderDrill();
                 break;
             //case (GenerationMode.RS_Curved):
             //    SpawnPlants_();
             //    break;
         }
-            
+
+        //iterate the growth probabilities to alter the structure of the field
+        for (counter_growth_stages=0; counter_growth_stages<target_growth_stage; ++counter_growth_stages)
+        {
+            ApplyProbabilityGrowthDistribution();
+        }
+
+        //spawn the GameObjects at the end
+        SpawnPlants();
+
         SpawnWeeds();
         PlaceLight();
         Render();
@@ -190,15 +216,12 @@ public class Field : MonoBehaviour
     /// </summary>
     private void CheckSceneForField()
     {
-        GameObject[] scene_objects = FindObjectsOfType<GameObject>();
-        if (scene_objects != null)
+        GameObject[] field_objects = GameObject.FindGameObjectsWithTag("Field_Holder");
+        if (field_objects != null)
         {
-            foreach(GameObject _g in scene_objects)
+            foreach(GameObject _g in field_objects)
             {
-                if (_g.tag == field_holder.tag)
-                {
-                    destroy(_g);
-                }
+                 destroy(_g);
             }
         }
         instantiated_field_holder = Instantiate(field_holder);
@@ -225,6 +248,160 @@ public class Field : MonoBehaviour
         float _gran_rd = ClampValueToMaxMin(
                             AveragePlusRandom(field_texture_average_granularity, field_texture_granularity_random), 1f, 10f);
         _field_part_renderer.sharedMaterial.SetVector("_Vector2Tiling", new Vector2(width / _gran_rd, height / _gran_rd));
+    }
+
+    private void GeneratePlantCoordinates_LinearV1()
+    {
+        all_plants_coordinates = new List<Vector2>();
+
+        float x_plant = 0;
+        float z_plant = 0;
+
+        float b = -width * field_size - field_size / 2;
+
+        while (b < height * field_size - field_size / 2)
+        {
+            x_plant = -field_size / 2;
+            z_plant = b;
+
+            int row_plant_first_index = all_plants_coordinates.Count;
+            int row_plant_last_index = all_plants_coordinates.Count;
+
+            while (x_plant < width * field_size - field_size / 2)
+            {
+                float _rad = Mathf.Deg2Rad * ClampValueToMaxMin(AveragePlusRandom(crop_rows_average_direction, crop_rows_direction_random), 0, 45);
+                float _hyp = AveragePlusRandom(crop_plants_average_spacing, crop_plants_spacing_random);
+
+                x_plant += Mathf.Cos(_rad) * _hyp;
+                z_plant += Mathf.Sin(_rad) * _hyp;
+
+                if (CheckInsideField(x_plant, z_plant))
+                {
+                    all_plants_coordinates.Add(new Vector2(x_plant, z_plant));
+                    row_plant_last_index++;
+                }
+            }
+
+            if (row_plant_last_index - row_plant_first_index > 0)
+            {
+                all_plants_rows_indeces.Add(row_plant_last_index);
+            }
+
+            b += AveragePlusRandom(crop_rows_average_spacing, crop_rows_spacing_random) / Mathf.Cos(Mathf.Deg2Rad * crop_rows_average_direction);
+        }
+
+        all_plants_living_status = new bool[all_plants_coordinates.Count];
+        for (int i = 0; i < all_plants_living_status.Length; i++)
+        {
+            all_plants_living_status[i] = true;
+        }
+    }
+
+    private void GeneratePlantCoordinates_LinearSeaderDrill()
+    {
+        all_plants_coordinates = new List<Vector2>();
+
+        float x_plant = 0;
+        float z_plant = 0;
+
+        float _rad = Mathf.Deg2Rad * ClampValueToMaxMin(AveragePlusRandom(crop_rows_average_direction, crop_rows_direction_random), 0, 45);
+        float a = Mathf.Tan(_rad);
+        float width_target = Random.Range((1 - 0.025f) * width * field_size - field_size / 2, width * field_size - field_size / 2);
+        float b = -a * width_target - field_size / 2;//the b parameter at which we should begin.
+
+        int crop_rows_counter = 1;
+        while (b < height * field_size)
+        {
+            int row_plant_first_index = all_plants_coordinates.Count;
+            int row_plant_last_index = all_plants_coordinates.Count;
+
+            x_plant = Mathf.Max(-b / a - field_size / 2, -field_size / 2);
+            if (x_plant == -field_size / 2)
+            {
+                z_plant = b - field_size / 2;
+            }
+            else
+            {
+                z_plant = -field_size / 2;
+            }
+            while (x_plant + Mathf.Cos(_rad) * crop_plant_seader_drill_spacing < width * field_size - field_size / 2 &&
+                   z_plant + Mathf.Sin(_rad) * crop_plant_seader_drill_spacing < height * field_size - field_size / 2)
+            {
+                x_plant += Mathf.Cos(_rad) * crop_plant_seader_drill_spacing;
+                z_plant += Mathf.Sin(_rad) * crop_plant_seader_drill_spacing;
+
+                all_plants_coordinates.Add(new Vector2(x_plant, z_plant));
+            }
+
+            if (row_plant_last_index - row_plant_first_index > 0)
+            {
+                all_plants_rows_indeces.Add(row_plant_last_index);
+            }
+
+            if (crop_rows_counter == crop_rows_on_seeder_drill)
+            {
+                _rad = Mathf.Deg2Rad * ClampValueToMaxMin(AveragePlusRandom(crop_rows_average_direction, crop_rows_direction_random), 0, 45);
+                a = Mathf.Tan(_rad);
+                b += AveragePlusRandom(crop_rows_average_spacing_between_seader_passes,
+                                        crop_rows_spacing_between_seader_passes_random) / Mathf.Cos(_rad);
+                crop_rows_counter = 1;
+            }
+            else
+            {
+                b += crop_rows_spacing_in_seader_drill;
+                crop_rows_counter++;
+            }
+        }
+        all_plants_living_status = new bool[all_plants_coordinates.Count];
+        for (int i = 0; i < all_plants_living_status.Length; i++)
+        {
+            all_plants_living_status[i] = true;
+        }
+    }
+
+
+    private void ApplyProbabilityGrowthDistribution()
+    {
+        for (int i = 0; i < all_plants_coordinates.Count; ++i)
+        {
+            if (!IsPlantAlive(all_plants_coordinates[i].x, all_plants_coordinates[i].y))
+            {
+                all_plants_living_status[i] = false;
+            }
+        }
+    }
+
+    /// <summary>
+    /// Computes if the plants is considered alive or not depending on the PlantGrowthProbabilityDistribution
+    /// </summary>
+    /// <param name="_x">float, plant GameObject X coordinates</param>
+    /// <param name="_z">float, plant GameObject Z coordinates</param>
+    /// <returns>Returns a boolean. true if the plants is considered alive and false otherwise.</returns>
+    private bool IsPlantAlive(float _x, float _z)
+    {
+        bool plant_alive = false;
+
+        switch (plant_growth_proba_distribution[counter_growth_stages])
+        {
+            case PlantGrowthProbabilityDistribution.Constant:
+                if (Random.Range(0f, 1f) < plant_growing_probability[counter_growth_stages])///////
+                {
+                    plant_alive = true;
+                }
+                break;
+
+            case PlantGrowthProbabilityDistribution.Custom_Curves:
+                float x_normalized_coord = (_x + field_size / 2) / (field_size * width);
+                float z_normalized_coord = (_z + field_size / 2) / (field_size * height);
+
+                float test_value = Random.Range(0f, 1f);
+
+                plant_alive = (test_value < X_Growth_Distribution[counter_growth_stages].Evaluate(x_normalized_coord)) &&
+                              (test_value < Z_Growth_Distribution[counter_growth_stages].Evaluate(z_normalized_coord));
+                break;
+        }
+
+        return plant_alive;
     }
 
     /// <summary>
@@ -333,59 +510,59 @@ public class Field : MonoBehaviour
         }
     }
 
+    private void SpawnPlants()
+    {
+        int row_count = 0;
+        GameObject plant_row = Instantiate(plant_row_holder) as GameObject;
+        plant_row.transform.parent = instantiated_field_holder.transform;
+
+        for (int i = 0; i<all_plants_coordinates.Count; i++)
+        {
+            if (i == all_plants_rows_indeces[row_count])
+            {
+                ++row_count;
+                plant_row = Instantiate(plant_row_holder) as GameObject;
+                plant_row.transform.parent = instantiated_field_holder.transform;
+            }
+            
+            SpawnPlant(all_plants_coordinates[i].x, all_plants_coordinates[i].y, plant_row);
+
+            if (!all_plants_living_status[i])
+            {
+                all_target_plants[all_target_plants.Count-1].SetActive(false);
+            }
+        }
+    }
+
     /// <summary>
     /// Spawn one plant on the X-Z plan in the scene
     /// </summary>
-    /// <param name="_x">float, X coordinates</param>
-    /// <param name="_z">float, Z coordinates</param>
+    /// <param name="_x">float, plant GameObject X coordinates</param>
+    /// <param name="_z">float, plant GameObject Z coordinates</param>
     /// <param name="_parent_row">GameObject, the crops row that it is part of.</param>
-    /// <remarks>Takes into account the growth probability of the plant</remarks>
     private void SpawnPlant(float _x, float _z, GameObject _parent_row)
     {
-        bool spawn_plant = false;
-
-        switch (plant_growth_proba_distribution)
+        GameObject plant = Instantiate(diff_growth_stages_plant_refs[0], Vector3.zero, Quaternion.identity) as GameObject;
+        if (crops_rows_GenMode == GenerationMode.LinearV1)
         {
-            case PlantGrowthProbabilityDistribution.Constant:
-                if (Random.Range(0f, 1f) < plant_growing_probability)
-                {
-                    spawn_plant = true;
-                }
-                break;
-
-            case PlantGrowthProbabilityDistribution.Custom_Curves:
-                float x_normalized_coord = (_x + field_size / 2) / (field_size * width);
-                float z_normalized_coord = (_z + field_size / 2) / (field_size * height);
-
-                float test_value = Random.Range(0f, 1f);
-
-                spawn_plant = (test_value < X_Growth_Distribution.Evaluate(x_normalized_coord)) &&
-                              (test_value < Z_Growth_Distribution.Evaluate(z_normalized_coord));
-                break;
+            plant.transform.position = new Vector3(_x, 0, _z);
         }
-
-        if (spawn_plant)
+        else
         {
-            GameObject plant = Instantiate(plant_ref, Vector3.zero, Quaternion.identity) as GameObject;
-            if (crops_rows_GenMode == GenerationMode.LinearV1)
-            {
-                plant.transform.position = new Vector3(_x, 0, _z);
-            }
-            else
-            {
-                plant.transform.position = new Vector3(_x + Random.Range(-crop_plant_position_radius, crop_plant_position_radius),
-                                                        0,
-                                                        _z + Random.Range(-crop_plant_position_radius, crop_plant_position_radius));
-            }
-            
-            float _plant_radius = ClampValueToMaxMin(AveragePlusRandom(plant_average_radius, plant_radius_random), 0f, 2f);
-            float _plant_size = ClampValueToMaxMin(AveragePlusRandom(plant_average_Yscale, plant_Yscale_random), 0f, 2f);
-            plant.transform.localScale = new Vector3( _plant_radius, _plant_size, _plant_radius);
-            plant.transform.Rotate(Vector3.up, Random.Range(0, 360));
-            plant.transform.parent = _parent_row.transform;
-
-            all_target_plants.Add(plant);
+            plant.transform.position = new Vector3(_x + Random.Range(-crop_plant_position_radius, crop_plant_position_radius),
+                                                    0,
+                                                    _z + Random.Range(-crop_plant_position_radius, crop_plant_position_radius));
         }
+        
+        float _plant_radius = ClampValueToMaxMin(AveragePlusRandom(plant_average_radius[target_growth_stage-1],
+                                                                    plant_radius_random[target_growth_stage - 1]), 0f, 2f);//////////
+        float _plant_size = ClampValueToMaxMin(AveragePlusRandom(plant_average_Yscale[target_growth_stage - 1],
+                                                                    plant_Yscale_random[target_growth_stage - 1]), 0f, 2f);//////////
+        plant.transform.localScale = new Vector3( _plant_radius, _plant_size, _plant_radius);
+        plant.transform.Rotate(Vector3.up, Random.Range(0, 360));
+        plant.transform.parent = _parent_row.transform;
+
+        all_target_plants.Add(plant);
     }
 
     /// <summary>
@@ -716,177 +893,177 @@ public class Field : MonoBehaviour
         }
     }
 
-    public void SaveParameters(string _savePath)
-    {
-        Dictionary<string, object> _dictRoot = new Dictionary<string, object>();
+    //public void SaveParameters(string _savePath)
+    //{
+    //    Dictionary<string, object> _dictRoot = new Dictionary<string, object>();
 
-        //Dictionary for the field parameters
-        Dictionary<string, object>  _dictFieldParameters = FieldParametersToDictionary();
+    //    //Dictionary for the field parameters
+    //    Dictionary<string, object>  _dictFieldParameters = FieldParametersToDictionary();
 
-        //Dictionary for the plant parameters
-        Dictionary<string, object> _dictPlantParameters = PlantParametersToDictionary();
+    //    //Dictionary for the plant parameters
+    //    Dictionary<string, object> _dictPlantParameters = PlantParametersToDictionary();
 
-        //Dictionary for the weed parameters (Perlin Noise included)
-        Dictionary<string, object> _dictWeedParameters = WeedParametersToDictionary();
+    //    //Dictionary for the weed parameters (Perlin Noise included)
+    //    Dictionary<string, object> _dictWeedParameters = WeedParametersToDictionary();
 
-        //Dictionary for the crops rows parameters
-        Dictionary<string, object> _dictCRParameters = CropRowsParametersToDictionary();
+    //    //Dictionary for the crops rows parameters
+    //    Dictionary<string, object> _dictCRParameters = CropRowsParametersToDictionary();
 
-        //Dictionary for the sun parameters
-        Dictionary<string, object> _dictSunParameters = SunParametersToDictionary();
+    //    //Dictionary for the sun parameters
+    //    Dictionary<string, object> _dictSunParameters = SunParametersToDictionary();
 
-        //Dictionaries for drone parameters
-        Dictionary<string, object> _dictDroneParameters = DroneParametersToDictionary();
-
-
-        _dictRoot.Add("Field_Parameters", _dictFieldParameters);
-        _dictRoot.Add("Plant_Parameters", _dictPlantParameters);
-        _dictRoot.Add("Weed_Parameters", _dictWeedParameters);
-        _dictRoot.Add("Crops_Rows_Parameters", _dictCRParameters);
-        _dictRoot.Add("Sun_Parameters", _dictSunParameters);
-        _dictRoot.Add("Drone_Parameters", _dictDroneParameters);
-
-        XmlSave.Save(_savePath, "Field_Generator_Parameters.xml", _dictRoot);
-    }
-
-    private Dictionary<string, object> FieldParametersToDictionary()
-    {
-        Dictionary<string, object> _dictFieldParameters = new Dictionary<string, object>();
-        //_dictFieldParameters.Add("field_ref", field_ref.name);
-        //_dictFieldParameters.Add("field_holder", field_holder.name);
-        Dictionary<string, object> _dictFieldDimensions = new Dictionary<string, object>();
-        _dictFieldDimensions.Add("height", height.ToString("G", CultureInfo.InvariantCulture));
-        _dictFieldDimensions.Add("width", width.ToString("G", CultureInfo.InvariantCulture));
-        _dictFieldParameters.Add("scale", _dictFieldDimensions);
-
-        Dictionary<string, object> _dictFieldTexture = new Dictionary<string, object>();
-        _dictFieldTexture.Add("field_texture_average_granularity", field_texture_average_granularity.ToString("G", CultureInfo.InvariantCulture));
-        _dictFieldTexture.Add("field_texture_granularity_random", field_texture_granularity_random.ToString("G", CultureInfo.InvariantCulture));
-        _dictFieldParameters.Add("texture", _dictFieldTexture);
-
-        return _dictFieldParameters;
-    }
-
-    private Dictionary<string, object> PlantParametersToDictionary()
-    {
-        Dictionary<string, object> _dictPlantParameters = new Dictionary<string, object>();
-        _dictPlantParameters.Add("plant_ref", plant_ref.name);
-        _dictPlantParameters.Add("plant_growing_probability", plant_growing_probability.ToString("G", CultureInfo.InvariantCulture));
-
-        Dictionary<string, object> _dictPlantYScale = new Dictionary<string, object>();
-        _dictPlantYScale.Add("plant_average_Yscale", plant_average_Yscale.ToString("G", CultureInfo.InvariantCulture));
-        _dictPlantYScale.Add("plant_Yscale_random", plant_Yscale_random.ToString("G", CultureInfo.InvariantCulture));
-        _dictPlantParameters.Add("Yscale", _dictPlantYScale);
-
-        Dictionary<string, object> _dictPlantCrops = new Dictionary<string, object>();
-        _dictPlantCrops.Add("crop_plants_average_spacing", crop_plants_average_spacing.ToString("G", CultureInfo.InvariantCulture));
-        _dictPlantCrops.Add("crop_plants_spacing_random", crop_plants_spacing_random.ToString("G", CultureInfo.InvariantCulture));
-        _dictPlantParameters.Add("crop_plants", _dictPlantCrops);
-
-        return _dictPlantParameters;
-    }
-
-    private Dictionary<string, object> WeedParametersToDictionary()
-    {
-        Dictionary<string, object> _dictWeedParameters = new Dictionary<string, object>();
-        _dictWeedParameters.Add("weed_ref", weed_ref.name);
-        _dictWeedParameters.Add("_weed_growing_probability", _weed_growing_probability.ToString("G", CultureInfo.InvariantCulture));
-
-        Dictionary<string, object> _dictWeedYScale = new Dictionary<string, object>();
-        _dictWeedYScale.Add("weed_average_Yscale", weed_average_Yscale.ToString("G", CultureInfo.InvariantCulture));
-        _dictWeedYScale.Add("weed_Yscale_random", weed_Yscale_random.ToString("G", CultureInfo.InvariantCulture));
-        _dictWeedParameters.Add("Yscale", _dictWeedYScale);
-
-        Dictionary<string, object> _dictWeedRadius = new Dictionary<string, object>();
-        _dictWeedRadius.Add("weed_average_radius", weed_average_radius.ToString("G", CultureInfo.InvariantCulture));
-        _dictWeedRadius.Add("weed_radius_random", weed_radius_random.ToString("G", CultureInfo.InvariantCulture));
-        _dictWeedParameters.Add("crop_plants", _dictWeedRadius);
+    //    //Dictionaries for drone parameters
+    //    Dictionary<string, object> _dictDroneParameters = DroneParametersToDictionary();
 
 
-        //Perlin Noise
-        Dictionary<string, object> _dictWeedPN = new Dictionary<string, object>();
+    //    _dictRoot.Add("Field_Parameters", _dictFieldParameters);
+    //    _dictRoot.Add("Plant_Parameters", _dictPlantParameters);
+    //    _dictRoot.Add("Weed_Parameters", _dictWeedParameters);
+    //    _dictRoot.Add("Crops_Rows_Parameters", _dictCRParameters);
+    //    _dictRoot.Add("Sun_Parameters", _dictSunParameters);
+    //    _dictRoot.Add("Drone_Parameters", _dictDroneParameters);
 
-        Dictionary<string, object> _dictNoiseDimensions = new Dictionary<string, object>();
-        _dictNoiseDimensions.Add("_weed_PN_MapHeight", _weed_PN_MapHeight.ToString("G", CultureInfo.InvariantCulture));
-        _dictNoiseDimensions.Add("_weed_PN_MapWidth", _weed_PN_MapWidth.ToString("G", CultureInfo.InvariantCulture));
-        _dictWeedPN.Add("map_dimensions", _dictNoiseDimensions);
+    //    XmlSave.Save(_savePath, "Field_Generator_Parameters.xml", _dictRoot);
+    //}
 
-        _dictWeedPN.Add("_weed_PN_Seed", _weed_PN_Seed.ToString("G", CultureInfo.InvariantCulture));
-        _dictWeedPN.Add("_weed_PN_Octaves", _weed_PN_Octaves.ToString("G", CultureInfo.InvariantCulture));
-        _dictWeedPN.Add("_weed_PN_NoiseScale", _weed_PN_NoiseScale.ToString("G", CultureInfo.InvariantCulture));
-        _dictWeedPN.Add("_weed_PN_Persistance", _weed_PN_Persistance.ToString("G", CultureInfo.InvariantCulture));
-        _dictWeedPN.Add("_weed_PN_Lacunarity", _weed_PN_Lacunarity.ToString("G", CultureInfo.InvariantCulture));
+    //private Dictionary<string, object> FieldParametersToDictionary()
+    //{
+    //    Dictionary<string, object> _dictFieldParameters = new Dictionary<string, object>();
+    //    //_dictFieldParameters.Add("field_ref", field_ref.name);
+    //    //_dictFieldParameters.Add("field_holder", field_holder.name);
+    //    Dictionary<string, object> _dictFieldDimensions = new Dictionary<string, object>();
+    //    _dictFieldDimensions.Add("height", height.ToString("G", CultureInfo.InvariantCulture));
+    //    _dictFieldDimensions.Add("width", width.ToString("G", CultureInfo.InvariantCulture));
+    //    _dictFieldParameters.Add("scale", _dictFieldDimensions);
 
-        Dictionary<string, object> _dictNoiseOffset = new Dictionary<string, object>();
-        _dictNoiseOffset.Add("X", _weed_PN_Offset.x.ToString("G", CultureInfo.InvariantCulture));
-        _dictNoiseOffset.Add("Y", _weed_PN_Offset.y.ToString("G", CultureInfo.InvariantCulture));
-        _dictWeedPN.Add("_weed_PN_Offset", _dictNoiseDimensions);
+    //    Dictionary<string, object> _dictFieldTexture = new Dictionary<string, object>();
+    //    _dictFieldTexture.Add("field_texture_average_granularity", field_texture_average_granularity.ToString("G", CultureInfo.InvariantCulture));
+    //    _dictFieldTexture.Add("field_texture_granularity_random", field_texture_granularity_random.ToString("G", CultureInfo.InvariantCulture));
+    //    _dictFieldParameters.Add("texture", _dictFieldTexture);
 
-        _dictWeedPN.Add("_weed_growth_threshold", _weed_growth_threshold.ToString("G", CultureInfo.InvariantCulture));
+    //    return _dictFieldParameters;
+    //}
 
-        _dictWeedParameters.Add("perlin_noise", _dictWeedPN);
+    //private Dictionary<string, object> PlantParametersToDictionary()
+    //{
+    //    Dictionary<string, object> _dictPlantParameters = new Dictionary<string, object>();
+    //    _dictPlantParameters.Add("plant_ref", plant_ref.name);
+    //    _dictPlantParameters.Add("plant_growing_probability", plant_growing_probability.ToString("G", CultureInfo.InvariantCulture));
 
-        return _dictWeedParameters;
-    }
+    //    Dictionary<string, object> _dictPlantYScale = new Dictionary<string, object>();
+    //    _dictPlantYScale.Add("plant_average_Yscale", plant_average_Yscale.ToString("G", CultureInfo.InvariantCulture));
+    //    _dictPlantYScale.Add("plant_Yscale_random", plant_Yscale_random.ToString("G", CultureInfo.InvariantCulture));
+    //    _dictPlantParameters.Add("Yscale", _dictPlantYScale);
 
-    private Dictionary<string, object> CropRowsParametersToDictionary()
-    {
-        Dictionary<string, object> _dictCRParameters = new Dictionary<string, object>();
+    //    Dictionary<string, object> _dictPlantCrops = new Dictionary<string, object>();
+    //    _dictPlantCrops.Add("crop_plants_average_spacing", crop_plants_average_spacing.ToString("G", CultureInfo.InvariantCulture));
+    //    _dictPlantCrops.Add("crop_plants_spacing_random", crop_plants_spacing_random.ToString("G", CultureInfo.InvariantCulture));
+    //    _dictPlantParameters.Add("crop_plants", _dictPlantCrops);
 
-        Dictionary<string, object> _dictCRDirection = new Dictionary<string, object>();
-        _dictCRDirection.Add("crop_rows_average_direction", crop_rows_average_direction.ToString("G", CultureInfo.InvariantCulture));
-        _dictCRDirection.Add("crop_rows_direction_random", crop_rows_direction_random.ToString("G", CultureInfo.InvariantCulture));
-        _dictCRParameters.Add("direction", _dictCRDirection);
+    //    return _dictPlantParameters;
+    //}
 
-        Dictionary<string, object> _dictCRSpacing = new Dictionary<string, object>();
-        _dictCRSpacing.Add("crop_rows_average_spacing", crop_rows_average_spacing.ToString("G", CultureInfo.InvariantCulture));
-        _dictCRSpacing.Add("crop_rows_spacing_random", crop_rows_spacing_random.ToString("G", CultureInfo.InvariantCulture));
-        _dictCRParameters.Add("spacing", _dictCRSpacing);
+    //private Dictionary<string, object> WeedParametersToDictionary()
+    //{
+    //    Dictionary<string, object> _dictWeedParameters = new Dictionary<string, object>();
+    //    _dictWeedParameters.Add("weed_ref", weed_ref.name);
+    //    _dictWeedParameters.Add("_weed_growing_probability", _weed_growing_probability.ToString("G", CultureInfo.InvariantCulture));
 
-        return _dictCRParameters;
-    }
+    //    Dictionary<string, object> _dictWeedYScale = new Dictionary<string, object>();
+    //    _dictWeedYScale.Add("weed_average_Yscale", weed_average_Yscale.ToString("G", CultureInfo.InvariantCulture));
+    //    _dictWeedYScale.Add("weed_Yscale_random", weed_Yscale_random.ToString("G", CultureInfo.InvariantCulture));
+    //    _dictWeedParameters.Add("Yscale", _dictWeedYScale);
 
-    private Dictionary<string, object> SunParametersToDictionary()
-    {
-        Dictionary<string, object> _dictSunParameters = new Dictionary<string, object>();
-
-        Dictionary<string, object> _dictSunElevation= new Dictionary<string, object>();
-        _dictSunElevation.Add("sun_average_elevation", sun_average_elevation.ToString("G", CultureInfo.InvariantCulture));
-        _dictSunElevation.Add("sun_elevation_random", sun_elevation_random.ToString("G", CultureInfo.InvariantCulture));
-        _dictSunParameters.Add("elevation", _dictSunElevation);
-
-        Dictionary<string, object> _dictSunAzimuth = new Dictionary<string, object>();
-        _dictSunAzimuth.Add("sun_average_azimuth", sun_average_azimuth.ToString("G", CultureInfo.InvariantCulture));
-        _dictSunAzimuth.Add("sun_azimuth_random", sun_azimuth_random.ToString("G", CultureInfo.InvariantCulture));
-        _dictSunParameters.Add("spacing", _dictSunAzimuth);
-
-        return _dictSunParameters;
-    }
-
-    private Dictionary<string, object> DroneParametersToDictionary()
-    {
-        Dictionary<string, object> _dictDroneParameters = new Dictionary<string, object>();
-
-        _dictDroneParameters.Add("drone_altitude", drone_altitude.ToString("G", CultureInfo.InvariantCulture));
-
-        Dictionary<string, object> _dictCamera = new Dictionary<string, object>();
-        Dictionary<string, object> _dictCameraSensor = new Dictionary<string, object>();
-        _dictCameraSensor.Add("x", camera_sensor_size.x.ToString("G", CultureInfo.InvariantCulture));
-        _dictCameraSensor.Add("y", camera_sensor_size.y.ToString("G", CultureInfo.InvariantCulture));
-        _dictCamera.Add("camera_sensor_size", _dictCameraSensor);
-
-        _dictCamera.Add("camera_focal_length", camera_focal_length.ToString("G", CultureInfo.InvariantCulture));
-
-        _dictDroneParameters.Add("camera", _dictCamera);
+    //    Dictionary<string, object> _dictWeedRadius = new Dictionary<string, object>();
+    //    _dictWeedRadius.Add("weed_average_radius", weed_average_radius.ToString("G", CultureInfo.InvariantCulture));
+    //    _dictWeedRadius.Add("weed_radius_random", weed_radius_random.ToString("G", CultureInfo.InvariantCulture));
+    //    _dictWeedParameters.Add("crop_plants", _dictWeedRadius);
 
 
-        Dictionary<string, object> _dictImageAcquisition = new Dictionary<string, object>();
-        _dictImageAcquisition.Add("image_capture_horizontal_overlapping", image_capture_horizontal_overlapping.ToString("G", CultureInfo.InvariantCulture));
-        _dictImageAcquisition.Add("image_capture_vertical_overlapping", image_capture_vertical_overlapping.ToString("G", CultureInfo.InvariantCulture));
+    //    //Perlin Noise
+    //    Dictionary<string, object> _dictWeedPN = new Dictionary<string, object>();
 
-        _dictDroneParameters.Add("spacing", _dictImageAcquisition);
+    //    Dictionary<string, object> _dictNoiseDimensions = new Dictionary<string, object>();
+    //    _dictNoiseDimensions.Add("_weed_PN_MapHeight", _weed_PN_MapHeight.ToString("G", CultureInfo.InvariantCulture));
+    //    _dictNoiseDimensions.Add("_weed_PN_MapWidth", _weed_PN_MapWidth.ToString("G", CultureInfo.InvariantCulture));
+    //    _dictWeedPN.Add("map_dimensions", _dictNoiseDimensions);
 
-        return _dictDroneParameters;
-    }
+    //    _dictWeedPN.Add("_weed_PN_Seed", _weed_PN_Seed.ToString("G", CultureInfo.InvariantCulture));
+    //    _dictWeedPN.Add("_weed_PN_Octaves", _weed_PN_Octaves.ToString("G", CultureInfo.InvariantCulture));
+    //    _dictWeedPN.Add("_weed_PN_NoiseScale", _weed_PN_NoiseScale.ToString("G", CultureInfo.InvariantCulture));
+    //    _dictWeedPN.Add("_weed_PN_Persistance", _weed_PN_Persistance.ToString("G", CultureInfo.InvariantCulture));
+    //    _dictWeedPN.Add("_weed_PN_Lacunarity", _weed_PN_Lacunarity.ToString("G", CultureInfo.InvariantCulture));
+
+    //    Dictionary<string, object> _dictNoiseOffset = new Dictionary<string, object>();
+    //    _dictNoiseOffset.Add("X", _weed_PN_Offset.x.ToString("G", CultureInfo.InvariantCulture));
+    //    _dictNoiseOffset.Add("Y", _weed_PN_Offset.y.ToString("G", CultureInfo.InvariantCulture));
+    //    _dictWeedPN.Add("_weed_PN_Offset", _dictNoiseDimensions);
+
+    //    _dictWeedPN.Add("_weed_growth_threshold", _weed_growth_threshold.ToString("G", CultureInfo.InvariantCulture));
+
+    //    _dictWeedParameters.Add("perlin_noise", _dictWeedPN);
+
+    //    return _dictWeedParameters;
+    //}
+
+    //private Dictionary<string, object> CropRowsParametersToDictionary()
+    //{
+    //    Dictionary<string, object> _dictCRParameters = new Dictionary<string, object>();
+
+    //    Dictionary<string, object> _dictCRDirection = new Dictionary<string, object>();
+    //    _dictCRDirection.Add("crop_rows_average_direction", crop_rows_average_direction.ToString("G", CultureInfo.InvariantCulture));
+    //    _dictCRDirection.Add("crop_rows_direction_random", crop_rows_direction_random.ToString("G", CultureInfo.InvariantCulture));
+    //    _dictCRParameters.Add("direction", _dictCRDirection);
+
+    //    Dictionary<string, object> _dictCRSpacing = new Dictionary<string, object>();
+    //    _dictCRSpacing.Add("crop_rows_average_spacing", crop_rows_average_spacing.ToString("G", CultureInfo.InvariantCulture));
+    //    _dictCRSpacing.Add("crop_rows_spacing_random", crop_rows_spacing_random.ToString("G", CultureInfo.InvariantCulture));
+    //    _dictCRParameters.Add("spacing", _dictCRSpacing);
+
+    //    return _dictCRParameters;
+    //}
+
+    //private Dictionary<string, object> SunParametersToDictionary()
+    //{
+    //    Dictionary<string, object> _dictSunParameters = new Dictionary<string, object>();
+
+    //    Dictionary<string, object> _dictSunElevation= new Dictionary<string, object>();
+    //    _dictSunElevation.Add("sun_average_elevation", sun_average_elevation.ToString("G", CultureInfo.InvariantCulture));
+    //    _dictSunElevation.Add("sun_elevation_random", sun_elevation_random.ToString("G", CultureInfo.InvariantCulture));
+    //    _dictSunParameters.Add("elevation", _dictSunElevation);
+
+    //    Dictionary<string, object> _dictSunAzimuth = new Dictionary<string, object>();
+    //    _dictSunAzimuth.Add("sun_average_azimuth", sun_average_azimuth.ToString("G", CultureInfo.InvariantCulture));
+    //    _dictSunAzimuth.Add("sun_azimuth_random", sun_azimuth_random.ToString("G", CultureInfo.InvariantCulture));
+    //    _dictSunParameters.Add("spacing", _dictSunAzimuth);
+
+    //    return _dictSunParameters;
+    //}
+
+    //private Dictionary<string, object> DroneParametersToDictionary()
+    //{
+    //    Dictionary<string, object> _dictDroneParameters = new Dictionary<string, object>();
+
+    //    _dictDroneParameters.Add("drone_altitude", drone_altitude.ToString("G", CultureInfo.InvariantCulture));
+
+    //    Dictionary<string, object> _dictCamera = new Dictionary<string, object>();
+    //    Dictionary<string, object> _dictCameraSensor = new Dictionary<string, object>();
+    //    _dictCameraSensor.Add("x", camera_sensor_size.x.ToString("G", CultureInfo.InvariantCulture));
+    //    _dictCameraSensor.Add("y", camera_sensor_size.y.ToString("G", CultureInfo.InvariantCulture));
+    //    _dictCamera.Add("camera_sensor_size", _dictCameraSensor);
+
+    //    _dictCamera.Add("camera_focal_length", camera_focal_length.ToString("G", CultureInfo.InvariantCulture));
+
+    //    _dictDroneParameters.Add("camera", _dictCamera);
+
+
+    //    Dictionary<string, object> _dictImageAcquisition = new Dictionary<string, object>();
+    //    _dictImageAcquisition.Add("image_capture_horizontal_overlapping", image_capture_horizontal_overlapping.ToString("G", CultureInfo.InvariantCulture));
+    //    _dictImageAcquisition.Add("image_capture_vertical_overlapping", image_capture_vertical_overlapping.ToString("G", CultureInfo.InvariantCulture));
+
+    //    _dictDroneParameters.Add("spacing", _dictImageAcquisition);
+
+    //    return _dictDroneParameters;
+    //}
 
 }

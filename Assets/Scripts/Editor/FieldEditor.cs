@@ -27,6 +27,9 @@ public class FieldEditor : Editor
     SerializedProperty open_drone_parameters_property;
     Texture2D drone_parameters_panel_texture;
 
+    SerializedProperty open_PGS_parameters_property;
+    Texture2D[] open_PGS_parameters_textures = new Texture2D[1];
+
     Texture2D close_h;
     Texture2D open_h;
     GUIStyle popupStyle;
@@ -68,11 +71,11 @@ public class FieldEditor : Editor
 
         RenderingParametersManager();
 
+        EditorGUILayout.Space();
+
+        TargetGrowthStageManager();
 
         serializedObject.ApplyModifiedProperties();
-
-
-        EditorGUILayout.Space();
 
         GenerateButtonManager();
 
@@ -123,6 +126,11 @@ public class FieldEditor : Editor
                         new GUIContent("Variability", "Introduces variability in the tiling divider of the texture of the field."));
 
                 }
+                
+                EditorGUILayout.PropertyField(serializedObject.FindProperty("field_monitoring_iterations"), 
+                    new GUIContent("Monitoring iterations", "Number of times we simulate the drone capturing images of the " +
+                    "field. Everytime the positions of the plants are that of the initial spawning but the 3D models " +
+                    "change according to the Growth Stages parameters in the \"Plant parameters\" section."));
             }
         }
         EditorGUILayout.EndFadeGroup();
@@ -145,42 +153,111 @@ public class FieldEditor : Editor
         {
             using (new EditorGUI.IndentLevelScope())
             {
-                EditorGUILayout.PropertyField(serializedObject.FindProperty("plant_ref"), new GUIContent("Plant 3D object", "The plant model."));
-
-                EditorGUILayout.PropertyField(serializedObject.FindProperty("plant_growth_proba_distribution"),
-                new GUIContent("Plant Growth Mode", "Selects which method to use to decide whether the plant has grown."));
-
-                if (serializedObject.FindProperty("plant_growth_proba_distribution").enumValueIndex == 0)
+                //Updating array sizes
+                if (serializedObject.FindProperty("diff_growth_stages_plant_refs").arraySize !=
+                            serializedObject.FindProperty("field_monitoring_iterations").intValue)
                 {
-                    EditorGUILayout.PropertyField(serializedObject.FindProperty("plant_growing_probability"), new GUIContent("Growth probability",
-                    "Probability that the plant is indeed instantiated on the surface of the field. It simulates whether the seed planted at the begining germinated."));
-                }
-                if (serializedObject.FindProperty("plant_growth_proba_distribution").enumValueIndex == 1)
-                {
-                    EditorGUILayout.PropertyField(serializedObject.FindProperty("X_Growth_Distribution"),
-                    new GUIContent("X-axis growth probability", "Probability that the plant is indeed instantiated on the surface of the field along the X axis."));
-
-                    EditorGUILayout.PropertyField(serializedObject.FindProperty("Z_Growth_Distribution"),
-                    new GUIContent("Z-axis growth probability", "Probability that the plant is indeed instantiated on the surface of the field along the Z axis."));
+                    
 
                 }
+                //Plants Game Objects array
+                serializedObject.FindProperty("diff_growth_stages_plant_refs").arraySize =
+                serializedObject.FindProperty("field_monitoring_iterations").intValue;
 
-                EditorGUILayout.PropertyField(serializedObject.FindProperty("plant_average_Yscale"),
-                    new GUIContent("Average size", "Modifies the average scale of the \"Plant 3D object\" on the Y axis."));
-                using (new EditorGUI.IndentLevelScope())
+                //Plants sub panel parameters open/close boolean
+                open_PGS_parameters_property.arraySize =
+                        serializedObject.FindProperty("field_monitoring_iterations").intValue;
+                open_PGS_parameters_textures = new Texture2D[open_PGS_parameters_property.arraySize];
+
+                //Plants 3D models YScale arrays
+                serializedObject.FindProperty("plant_average_Yscale").arraySize =
+                serializedObject.FindProperty("field_monitoring_iterations").intValue;
+                serializedObject.FindProperty("plant_Yscale_random").arraySize =
+                serializedObject.FindProperty("field_monitoring_iterations").intValue;
+
+                //Plants 3D models radius arrays
+                serializedObject.FindProperty("plant_average_radius").arraySize =
+                serializedObject.FindProperty("field_monitoring_iterations").intValue;
+                serializedObject.FindProperty("plant_radius_random").arraySize =
+                serializedObject.FindProperty("field_monitoring_iterations").intValue;
+
+                //Plants 3D models growth distribution modes arrays
+                serializedObject.FindProperty("plant_growth_proba_distribution").arraySize =
+                serializedObject.FindProperty("field_monitoring_iterations").intValue;
+
+                serializedObject.FindProperty("plant_growing_probability").arraySize =
+                serializedObject.FindProperty("field_monitoring_iterations").intValue;
+                serializedObject.FindProperty("X_Growth_Distribution").arraySize =
+                serializedObject.FindProperty("field_monitoring_iterations").intValue;
+                serializedObject.FindProperty("Z_Growth_Distribution").arraySize =
+                serializedObject.FindProperty("field_monitoring_iterations").intValue;
+
+                //Updating Textures of the plants sub panels open/close button
+                for (int i = 0; i < open_PGS_parameters_textures.Length; ++i)
                 {
-                    EditorGUILayout.PropertyField(serializedObject.FindProperty("plant_Yscale_random"),
-                        new GUIContent("Variability", "Introduces variability among plants in regards to their scale on the Y axis."));
-
+                    open_PGS_parameters_textures[i] = UpdateParametersPanelTexture(
+                                                            open_PGS_parameters_property.GetArrayElementAtIndex(i),
+                                                            open_PGS_parameters_textures[i]);
                 }
 
-                EditorGUILayout.PropertyField(serializedObject.FindProperty("plant_average_radius"),
-                    new GUIContent("Average radius", "Modifies the average scale of the \"Plant 3D object\" on the X and Z axis."));
-                using (new EditorGUI.IndentLevelScope())
+                //Drawing the content of the sub panel
+                for (int i = 0; i < serializedObject.FindProperty("diff_growth_stages_plant_refs").arraySize; ++i)
                 {
-                    EditorGUILayout.PropertyField(serializedObject.FindProperty("plant_radius_random"),
-                        new GUIContent("Variability", "Introduces variability among plants in regards to their scale on the X and Z axis."));
+                    using (new EditorGUI.IndentLevelScope())
+                    {
+                        EditorGUILayout.BeginHorizontal();
+                        if (GUILayout.Button(open_PGS_parameters_textures[i], popupStyle, GUILayout.Width(15), GUILayout.Height(15)))
+                        {
+                            open_PGS_parameters_property.GetArrayElementAtIndex(i).boolValue = !open_PGS_parameters_property.GetArrayElementAtIndex(i).boolValue;
+                        }
+                        EditorGUILayout.LabelField($"Growth Stage {i + 1}", EditorStyles.boldLabel);
+                        EditorGUILayout.EndHorizontal();
 
+                        if (EditorGUILayout.BeginFadeGroup(Bool2Float(open_PGS_parameters_property.GetArrayElementAtIndex(i).boolValue)))
+                        {
+                            EditorGUILayout.PropertyField(serializedObject.FindProperty("diff_growth_stages_plant_refs").GetArrayElementAtIndex(i),
+                                new GUIContent($"Plant 3D object", $"The plant model"));
+
+                            EditorGUILayout.PropertyField(serializedObject.FindProperty("plant_average_Yscale").GetArrayElementAtIndex(i),
+                                new GUIContent("Average size", "Modifies the average scale of the \"Plant 3D object\" on the Y axis."));
+                            using (new EditorGUI.IndentLevelScope())
+                            {
+                                EditorGUILayout.PropertyField(serializedObject.FindProperty("plant_Yscale_random").GetArrayElementAtIndex(i),
+                                    new GUIContent("Variability", "Introduces variability among plants in regards to their scale on the Y axis."));
+                            }
+
+                            EditorGUILayout.PropertyField(serializedObject.FindProperty("plant_average_radius").GetArrayElementAtIndex(i),
+                                new GUIContent("Average radius", "Modifies the average scale of the \"Plant 3D object\" on the X and Z axis."));
+                            using (new EditorGUI.IndentLevelScope())
+                            {
+                                EditorGUILayout.PropertyField(serializedObject.FindProperty("plant_radius_random").GetArrayElementAtIndex(i),
+                                    new GUIContent("Variability", "Introduces variability among plants in regards to their scale on the X and Z axis."));
+                            }
+
+                            EditorGUILayout.PropertyField(serializedObject.FindProperty("plant_growth_proba_distribution").GetArrayElementAtIndex(i),
+                            new GUIContent("Plant Growth Mode", "Selects which method to use to decide whether the plant has grown."));
+
+                            switch (serializedObject.FindProperty("plant_growth_proba_distribution").GetArrayElementAtIndex(i).enumValueIndex)
+                            {
+                                case (0):
+                                    EditorGUILayout.PropertyField(serializedObject.FindProperty("plant_growing_probability").GetArrayElementAtIndex(i),
+                                        new GUIContent("Growth probability", "Probability that the plant is indeed instantiated on the surface of the field. It simulates whether the seed planted at the begining germinated."));
+                                    break;
+
+                                case (1):
+                                    EditorGUILayout.PropertyField(serializedObject.FindProperty("X_Growth_Distribution").GetArrayElementAtIndex(i),
+                                        new GUIContent("X-axis growth probability", "Probability that the plant is indeed instantiated on the surface of the field along the X axis."));
+
+                                    EditorGUILayout.PropertyField(serializedObject.FindProperty("Z_Growth_Distribution").GetArrayElementAtIndex(i),
+                                        new GUIContent("Z-axis growth probability", "Probability that the plant is indeed instantiated on the surface of the field along the Z axis."));
+                                    break;
+                            }
+                        }
+                        EditorGUILayout.EndFadeGroup();
+
+                    }
+                    EditorGUILayout.Space();
+                    
                 }
                 switch (serializedObject.FindProperty("crops_rows_GenMode").enumValueIndex)
                 {
@@ -560,6 +637,18 @@ public class FieldEditor : Editor
         EditorGUILayout.EndVertical();
     }
 
+    private void TargetGrowthStageManager()
+    {
+        EditorGUILayout.PropertyField(serializedObject.FindProperty("target_growth_stage"),
+            new GUIContent("Target Growth Stage", "The growth stage we wish to visualize. The Vaue is bounded between" +
+            "0 and \"Monitoring Iteragetion\" in the \"Field parameters\" section."));
+
+        if (serializedObject.FindProperty("target_growth_stage").intValue > serializedObject.FindProperty("field_monitoring_iterations").intValue)
+        {
+            serializedObject.FindProperty("target_growth_stage").intValue = serializedObject.FindProperty("field_monitoring_iterations").intValue;
+        }
+    }
+
     private void GenerateButtonManager()
     {
         if (GUILayout.Button("Generate Field"))
@@ -572,7 +661,8 @@ public class FieldEditor : Editor
     {
         if (GUILayout.Button("Save Parameters"))
         {
-            field_ref.SaveParameters("C:/Users/eliot/Documents/Scolarité/AgroParisTech/3A/Stage_Tournesols/Unity");
+            //field_ref.SaveParameters("C:/Users/eliot/Documents/Scolarité/AgroParisTech/3A/Stage_Tournesols/Unity");
+            Debug.Log("Functions to adapt");
         }
     }
 
@@ -598,6 +688,8 @@ public class FieldEditor : Editor
         open_sun_parameters_property = serializedObject.FindProperty("open_sun_parameters");
         open_rendering_parameters_property = serializedObject.FindProperty("open_rendering_parameters");
         open_drone_parameters_property = serializedObject.FindProperty("open_drone_parameters");
+
+        open_PGS_parameters_property = serializedObject.FindProperty("open_PGS_parameters");
     }
 
     /// <summary>
@@ -612,6 +704,7 @@ public class FieldEditor : Editor
 
     private void UpdateParametersPanelTextures()
     {
+        //Main Parameter panels
         field_parameters_panel_texture = UpdateParametersPanelTexture(open_field_parameters_property, field_parameters_panel_texture);
 
         plant_parameters_panel_texture = UpdateParametersPanelTexture(open_plant_parameters_property, plant_parameters_panel_texture);
@@ -625,6 +718,8 @@ public class FieldEditor : Editor
         rendering_parameters_panel_texture = UpdateParametersPanelTexture(open_rendering_parameters_property, rendering_parameters_panel_texture);
 
         drone_parameters_panel_texture = UpdateParametersPanelTexture(open_drone_parameters_property, drone_parameters_panel_texture);
+
+        
 
     }
 
