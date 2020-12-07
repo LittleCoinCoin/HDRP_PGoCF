@@ -85,6 +85,9 @@ public class CameraVision : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Instanciate deacals that indicate the limits of the cameras field of view (FOV)
+    /// </summary>
     public void Debug_FOV_HW_2()
     {
         if (DecalProjectort_List.Count == 0)

@@ -214,7 +214,7 @@ public class CaptureImage : MonoBehaviour
 
             if (!parameter_saved)
             {
-                field_generator_ref.SaveParameters(RootFolder + TimeFolder);
+                //field_generator_ref.SaveParameters(RootFolder + TimeFolder);
                 parameter_saved = true;
             }
             
@@ -241,13 +241,9 @@ public class CaptureImage : MonoBehaviour
 
     void LateUpdate()
     {
-        // check keyboard 'k' for one time screenshot capture and holding down 'v' for continious screenshots
-        //captureScreenshot |= Input.GetKeyDown("g");
-        //captureVideo = Input.GetKey("v");
 
         if (Input.GetKeyDown(KeyCode.G))
         {
-            //TakeScreenshot();
             TakePicture();
         }
     }

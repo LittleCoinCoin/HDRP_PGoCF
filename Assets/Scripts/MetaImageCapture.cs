@@ -17,7 +17,6 @@ public class MetaImageCapture : MonoBehaviour
     public int maxHeightGridSubset;
 
     [Min(1)] public int numberOfFields;
-
     
 
 }
