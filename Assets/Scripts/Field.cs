@@ -250,9 +250,11 @@ public class Field : MonoBehaviour
         _field_part_renderer.sharedMaterial.SetVector("_Vector2Tiling", new Vector2(width / _gran_rd, height / _gran_rd));
     }
 
+
     private void GeneratePlantCoordinates_LinearV1()
     {
         all_plants_coordinates = new List<Vector2>();
+        all_target_plants = new List<GameObject>();
 
         float x_plant = 0;
         float z_plant = 0;
@@ -300,6 +302,7 @@ public class Field : MonoBehaviour
     private void GeneratePlantCoordinates_LinearSeaderDrill()
     {
         all_plants_coordinates = new List<Vector2>();
+        all_target_plants = new List<GameObject>();
 
         float x_plant = 0;
         float z_plant = 0;
@@ -358,7 +361,6 @@ public class Field : MonoBehaviour
             all_plants_living_status[i] = true;
         }
     }
-
 
     private void ApplyProbabilityGrowthDistribution()
     {
@@ -524,7 +526,7 @@ public class Field : MonoBehaviour
                 plant_row = Instantiate(plant_row_holder) as GameObject;
                 plant_row.transform.parent = instantiated_field_holder.transform;
             }
-            
+
             SpawnPlant(all_plants_coordinates[i].x, all_plants_coordinates[i].y, plant_row);
 
             if (!all_plants_living_status[i])
@@ -562,7 +564,11 @@ public class Field : MonoBehaviour
         plant.transform.Rotate(Vector3.up, Random.Range(0, 360));
         plant.transform.parent = _parent_row.transform;
 
+        
         all_target_plants.Add(plant);
+
+
+
     }
 
     /// <summary>
