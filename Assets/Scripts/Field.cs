@@ -13,10 +13,12 @@ public class Field : MonoBehaviour
     public enum FieldDevelopmentMonitoringMode { Unique, Multiple }
     public FieldDevelopmentMonitoringMode field_dev_monitoring_mode = FieldDevelopmentMonitoringMode.Unique;
     [Min(1)] public int field_monitoring_iterations = 1;
+    private List<bool[]> field_monitoring_all_plants_status;
 
     //parameters to decide which growth stage of the field time monitoring we should reach
-    [Min(1)] public int target_growth_stage;
+    [Min(1)] public int target_growth_stage = 1;
     private int counter_growth_stages;
+    
 
     //Instantiation mode of the crop rows.
     public enum GenerationMode { LinearV1, LinearSeaderDrill }//, RS_Curved}
@@ -26,17 +28,17 @@ public class Field : MonoBehaviour
     [Min(1)] public int crop_rows_on_seeder_drill;
 
     //space between crop rows with Seader Drill
-    [Min(0)] public float crop_rows_spacing_in_seader_drill;
-    [Min(0)] public float crop_rows_average_spacing_between_seader_passes;
-    [Min(0)] public float crop_rows_spacing_between_seader_passes_random;
+    [Min(0.001f)] public float crop_rows_spacing_in_seader_drill;
+    [Min(0.001f)] public float crop_rows_average_spacing_between_seader_passes;
+    [Range(0f,1f)] public float crop_rows_spacing_between_seader_passes_random;
 
     //space between rows for LinearV1
-    public float crop_rows_average_spacing;
-    public float crop_rows_spacing_random;
+    [Min(0.001f)] public float crop_rows_average_spacing;
+    [Range(0f, 1f)] public float crop_rows_spacing_random;
 
     //space between plants in rows for LinearV1
-    public float crop_plants_average_spacing;
-    public float crop_plants_spacing_random;
+    [Min(0.001f)] public float crop_plants_average_spacing;
+    [Range(0f, 1f)] public float crop_plants_spacing_random;
 
     //plants randomized position with Seader Drill
     public float crop_plant_seader_drill_spacing;
@@ -44,7 +46,7 @@ public class Field : MonoBehaviour
 
     //angle of the crop rows on the fields
     [Range(0f, 45f)] public float crop_rows_average_direction;
-    public float crop_rows_direction_random;
+    [Range(0f, 1f)] public float crop_rows_direction_random;
 
     //Empty GameObject to be parent of all the instanciated gameobjects making a field
     public GameObject field_holder;
@@ -54,8 +56,8 @@ public class Field : MonoBehaviour
     public GameObject field_ref;
     public float field_size = 10;//the size of the Unity built in Plane prefab.
     private Vector3 field_center;
-    [Range(1f, 10f)] public float field_texture_average_granularity = 1f;
-    [Range(0f, 10f)] public float field_texture_granularity_random = 1f;
+    [Min(1f)] public float field_texture_average_granularity = 1f;
+    [Range(0f, 1f)] public float field_texture_granularity_random = 1f;
 
     //Empty GameObject to be parent of all the plants gameobjects making a crop row
     public GameObject plant_row_holder;
@@ -75,25 +77,24 @@ public class Field : MonoBehaviour
     public AnimationCurve[] Z_Growth_Distribution = new AnimationCurve[1];
 
     //scaling the size of the 3D model of the plant
-    [Range(0f, 2f)] public float[] plant_average_Yscale = new float[1];
-    [Range(0f, 2f)] public float[] plant_Yscale_random = new float[1];
-    [Range(0f, 2f)] public float[] plant_average_radius = new float[1];
-    [Range(0f, 2f)] public float[] plant_radius_random = new float[1];
+    [Min(0f)] public float[] plant_average_Yscale = new float[1];
+    [Range(0f, 1f)] public float[] plant_Yscale_random = new float[1];
+    [Min(0f)] public float[] plant_average_radius = new float[1];
+    [Range(0f, 1f)] public float[] plant_radius_random = new float[1];
 
     //List of the plants in the field
     public List<GameObject> all_target_plants;
     public List<Vector2> all_plants_coordinates;
-    public bool[] all_plants_living_status;
     public List<int> all_plants_rows_indeces;
 
 
     //3D model of the Weed
     public GameObject weed_ref;
-    [Range(0f, 2f)] public float weed_average_Yscale = 1f;
-    [Range(0f, 2f)] public float weed_Yscale_random = 0.5f;
-    [Range(0f, 2f)] public float weed_average_radius = 1f;
-    [Range(0f, 2f)] public float weed_radius_random = 0.5f;
-    [Range(0f, 1f)] public float _weed_growth_threshold = 0.5f;
+    [Min(0f)] public float weed_average_Yscale = 1f;
+    [Range(0f, 1f)] public float weed_Yscale_random = 0.5f;
+    [Min(0f)] public float weed_average_radius = 1f;
+    [Range(0f, 1f)] public float weed_radius_random = 0.5f;
+    [Min(0f)] public float _weed_growth_threshold = 0.5f;
     [Range(0f, 1f)] public float _weed_growing_probability = 0.5f;
     public Vector2 _weed_local_random = Vector2.zero;
 
@@ -120,9 +121,9 @@ public class Field : MonoBehaviour
 
     //equivalent of the elevation and azimuth for the sun position
     [Range(0f, 180f)] public float sun_average_elevation;
-    [Range(0f, 180f)] public float sun_elevation_random;
+    [Range(0f, 1f)] public float sun_elevation_random;
     [Range(-90f, 90f)] public float sun_average_azimuth;
-    [Range(0f, 180f)] public float sun_azimuth_random;
+    [Range(0f, 1f)] public float sun_azimuth_random;
 
     //parameters for the drone
     public GameObject drone_ref;
@@ -171,7 +172,8 @@ public class Field : MonoBehaviour
     }
 
     ///<summary>
-    ///Procedutal Generation of the field
+    ///Procedural Generation of the field.
+    ///Computes all the plants positions and living status for every monitoring stages.
     ///</summary>
     public void Generator()
     {
@@ -197,7 +199,7 @@ public class Field : MonoBehaviour
         }
 
         //iterate the growth probabilities to alter the structure of the field
-        for (counter_growth_stages=0; counter_growth_stages<target_growth_stage; ++counter_growth_stages)
+        for (counter_growth_stages=0; counter_growth_stages<field_monitoring_iterations; ++counter_growth_stages)
         {
             ApplyProbabilityGrowthDistribution();
         }
@@ -209,8 +211,31 @@ public class Field : MonoBehaviour
         PlaceLight();
         Render();
         ApplyDroneParameters();
+
+        ApplyPlantStatus();
     }
-    
+
+    /// <summary>
+    /// Purpose is to show the state of the field at individual monitoring stages.
+    /// You have to at least use the Generator function once in the editor before using 
+    /// this function.
+    /// </summary>
+    public void ShowFieldAtTargetMonitoringStage()
+    {
+        CheckSceneForField();
+        SpawnField();
+
+        //spawn the GameObjects at the end
+        SpawnPlants();
+
+        SpawnWeeds();
+        PlaceLight();
+        Render();
+        ApplyDroneParameters();
+
+        ApplyPlantStatus();
+    }
+
     /// <summary>
     /// Look for all the gameobjects of the scene with the tag "Field_Holder" and destroy them.
     /// </summary>
@@ -229,8 +254,7 @@ public class Field : MonoBehaviour
     }
 
     /// <summary>
-    /// Spawn squares of fields. Takes the opportunity to calculate the center of the field
-    /// and assign the value to the private variable "Vector3 field_center"
+    /// Spawn the field and manage its scale.
     /// </summary>
     private void SpawnField()
     {
@@ -245,16 +269,18 @@ public class Field : MonoBehaviour
         ////Manage Texture granularity by acessing shader property
         Renderer _field_part_renderer = field_part.GetComponent<Renderer>();
         _field_part_renderer.sharedMaterial.shader = Shader.Find("Shader Graphs/DryRockyDirt");
-        float _gran_rd = ClampValueToMaxMin(
-                            AveragePlusRandom(field_texture_average_granularity, field_texture_granularity_random), 1f, 10f);
+        float _gran_rd = AveragePlusRandom(field_texture_average_granularity, field_texture_granularity_random);
         _field_part_renderer.sharedMaterial.SetVector("_Vector2Tiling", new Vector2(width / _gran_rd, height / _gran_rd));
     }
 
-
+    /// <summary>
+    /// Generates initial positions of the plants in the field according to the 
+    /// strategy used in the early stages of the project.
+    /// </summary>
     private void GeneratePlantCoordinates_LinearV1()
     {
         all_plants_coordinates = new List<Vector2>();
-        all_target_plants = new List<GameObject>();
+        field_monitoring_all_plants_status = new List<bool[]>();
 
         float x_plant = 0;
         float z_plant = 0;
@@ -271,7 +297,7 @@ public class Field : MonoBehaviour
 
             while (x_plant < width * field_size - field_size / 2)
             {
-                float _rad = Mathf.Deg2Rad * ClampValueToMaxMin(AveragePlusRandom(crop_rows_average_direction, crop_rows_direction_random), 0, 45);
+                float _rad = Mathf.Deg2Rad * AveragePlusRandom(crop_rows_average_direction, crop_rows_direction_random);
                 float _hyp = AveragePlusRandom(crop_plants_average_spacing, crop_plants_spacing_random);
 
                 x_plant += Mathf.Cos(_rad) * _hyp;
@@ -291,23 +317,21 @@ public class Field : MonoBehaviour
 
             b += AveragePlusRandom(crop_rows_average_spacing, crop_rows_spacing_random) / Mathf.Cos(Mathf.Deg2Rad * crop_rows_average_direction);
         }
-
-        all_plants_living_status = new bool[all_plants_coordinates.Count];
-        for (int i = 0; i < all_plants_living_status.Length; i++)
-        {
-            all_plants_living_status[i] = true;
-        }
     }
 
+    /// <summary>
+    /// Generates initial positions of the plants in the field according to the 
+    /// strategy mimicing a Seader Drill attached to a tractor
+    /// </summary>
     private void GeneratePlantCoordinates_LinearSeaderDrill()
     {
         all_plants_coordinates = new List<Vector2>();
-        all_target_plants = new List<GameObject>();
+        field_monitoring_all_plants_status = new List<bool[]>();
 
         float x_plant = 0;
         float z_plant = 0;
 
-        float _rad = Mathf.Deg2Rad * ClampValueToMaxMin(AveragePlusRandom(crop_rows_average_direction, crop_rows_direction_random), 0, 45);
+        float _rad = Mathf.Deg2Rad * AveragePlusRandom(crop_rows_average_direction, crop_rows_direction_random);
         float a = Mathf.Tan(_rad);
         float width_target = Random.Range((1 - 0.025f) * width * field_size - field_size / 2, width * field_size - field_size / 2);
         float b = -a * width_target - field_size / 2;//the b parameter at which we should begin.
@@ -333,7 +357,9 @@ public class Field : MonoBehaviour
                 x_plant += Mathf.Cos(_rad) * crop_plant_seader_drill_spacing;
                 z_plant += Mathf.Sin(_rad) * crop_plant_seader_drill_spacing;
 
-                all_plants_coordinates.Add(new Vector2(x_plant, z_plant));
+                float _x_plant = x_plant + Random.Range(-crop_plant_position_radius, crop_plant_position_radius);
+                float _z_plant = z_plant + Random.Range(-crop_plant_position_radius, crop_plant_position_radius);
+                all_plants_coordinates.Add(new Vector2(_x_plant, _z_plant));
             }
 
             if (row_plant_last_index - row_plant_first_index > 0)
@@ -343,7 +369,7 @@ public class Field : MonoBehaviour
 
             if (crop_rows_counter == crop_rows_on_seeder_drill)
             {
-                _rad = Mathf.Deg2Rad * ClampValueToMaxMin(AveragePlusRandom(crop_rows_average_direction, crop_rows_direction_random), 0, 45);
+                _rad = Mathf.Deg2Rad * AveragePlusRandom(crop_rows_average_direction, crop_rows_direction_random);
                 a = Mathf.Tan(_rad);
                 b += AveragePlusRandom(crop_rows_average_spacing_between_seader_passes,
                                         crop_rows_spacing_between_seader_passes_random) / Mathf.Cos(_rad);
@@ -355,22 +381,29 @@ public class Field : MonoBehaviour
                 crop_rows_counter++;
             }
         }
-        all_plants_living_status = new bool[all_plants_coordinates.Count];
-        for (int i = 0; i < all_plants_living_status.Length; i++)
-        {
-            all_plants_living_status[i] = true;
-        }
     }
 
+    /// <summary>
+    /// Fills in the all_plants_living_status arrays.
+    /// </summary>
     private void ApplyProbabilityGrowthDistribution()
     {
+        bool[] _all_plants_living_status = new bool[all_plants_coordinates.Count];
         for (int i = 0; i < all_plants_coordinates.Count; ++i)
         {
-            if (!IsPlantAlive(all_plants_coordinates[i].x, all_plants_coordinates[i].y))
+            if (counter_growth_stages > 0)
             {
-                all_plants_living_status[i] = false;
+                if (field_monitoring_all_plants_status[counter_growth_stages - 1][i])//if plant is alive at the previous growth step
+                {
+                    _all_plants_living_status[i] = IsPlantAlive(all_plants_coordinates[i].x, all_plants_coordinates[i].y);
+                }
+            }
+            else
+            {
+                _all_plants_living_status[i] = IsPlantAlive(all_plants_coordinates[i].x, all_plants_coordinates[i].y);
             }
         }
+        field_monitoring_all_plants_status.Add(_all_plants_living_status);
     }
 
     /// <summary>
@@ -386,7 +419,7 @@ public class Field : MonoBehaviour
         switch (plant_growth_proba_distribution[counter_growth_stages])
         {
             case PlantGrowthProbabilityDistribution.Constant:
-                if (Random.Range(0f, 1f) < plant_growing_probability[counter_growth_stages])///////
+                if (Random.Range(0f, 1f) < plant_growing_probability[counter_growth_stages])
                 {
                     plant_alive = true;
                 }
@@ -409,6 +442,7 @@ public class Field : MonoBehaviour
     /// <summary>
     /// Spawn the plants organized as rows on the field in a linear fashion v1
     /// </summary>
+    /// <remarks> DEPRECATED! To be Removed </remarks>
     private void SpawnPlants_LinearV1()
     {
         all_target_plants = new List<GameObject>();
@@ -428,7 +462,7 @@ public class Field : MonoBehaviour
 
             while (x_plant < width * field_size - field_size / 2)
             {
-                float _rad = Mathf.Deg2Rad * ClampValueToMaxMin(AveragePlusRandom(crop_rows_average_direction, crop_rows_direction_random), 0, 45);
+                float _rad = Mathf.Deg2Rad * AveragePlusRandom(crop_rows_average_direction, crop_rows_direction_random);
                 float _hyp = AveragePlusRandom(crop_plants_average_spacing, crop_plants_spacing_random);
 
                 x_plant += Mathf.Cos(_rad) * _hyp;
@@ -455,6 +489,7 @@ public class Field : MonoBehaviour
     /// So, the direction and spacing of the crop rows are different only between
     /// series of crop rows.
     /// </summary>
+    /// <remarks> DEPRECATED! To be Removed </remarks>
     private void SpawnPlants_LinearSeaderDrill()
     {
         all_target_plants = new List<GameObject>();
@@ -462,7 +497,7 @@ public class Field : MonoBehaviour
         float x_plant = 0;
         float z_plant = 0;
 
-        float _rad = Mathf.Deg2Rad * ClampValueToMaxMin(AveragePlusRandom(crop_rows_average_direction, crop_rows_direction_random), 0, 45);
+        float _rad = Mathf.Deg2Rad * AveragePlusRandom(crop_rows_average_direction, crop_rows_direction_random);
         float a = Mathf.Tan(_rad);
         float width_target = Random.Range((1-0.025f) * width * field_size - field_size / 2, width * field_size - field_size / 2);
         float b = -a * width_target -field_size / 2;//the b parameter at which we should begin.
@@ -498,7 +533,7 @@ public class Field : MonoBehaviour
             
             if (crop_rows_counter == crop_rows_on_seeder_drill)
             {
-                _rad = Mathf.Deg2Rad * ClampValueToMaxMin(AveragePlusRandom(crop_rows_average_direction, crop_rows_direction_random), 0, 45);
+                _rad = Mathf.Deg2Rad * AveragePlusRandom(crop_rows_average_direction, crop_rows_direction_random);
                 a = Mathf.Tan(_rad);
                 b += AveragePlusRandom(crop_rows_average_spacing_between_seader_passes,
                                         crop_rows_spacing_between_seader_passes_random) / Mathf.Cos(_rad);
@@ -512,8 +547,14 @@ public class Field : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Spawn all the plants.
+    /// Loops through the plants living status and activates models depending on the value. 
+    /// </summary>
     private void SpawnPlants()
     {
+        all_target_plants = new List<GameObject>();
+
         int row_count = 0;
         GameObject plant_row = Instantiate(plant_row_holder) as GameObject;
         plant_row.transform.parent = instantiated_field_holder.transform;
@@ -528,11 +569,15 @@ public class Field : MonoBehaviour
             }
 
             SpawnPlant(all_plants_coordinates[i].x, all_plants_coordinates[i].y, plant_row);
+        }
+    }
 
-            if (!all_plants_living_status[i])
-            {
-                all_target_plants[all_target_plants.Count-1].SetActive(false);
-            }
+    public void ApplyPlantStatus()
+    {
+        for (int i = 0; i < all_plants_coordinates.Count; i++)
+        {
+            all_target_plants[i].SetActive(
+                field_monitoring_all_plants_status[target_growth_stage - 1][i]);
         }
     }
 
@@ -544,31 +589,18 @@ public class Field : MonoBehaviour
     /// <param name="_parent_row">GameObject, the crops row that it is part of.</param>
     private void SpawnPlant(float _x, float _z, GameObject _parent_row)
     {
-        GameObject plant = Instantiate(diff_growth_stages_plant_refs[0], Vector3.zero, Quaternion.identity) as GameObject;
-        if (crops_rows_GenMode == GenerationMode.LinearV1)
-        {
-            plant.transform.position = new Vector3(_x, 0, _z);
-        }
-        else
-        {
-            plant.transform.position = new Vector3(_x + Random.Range(-crop_plant_position_radius, crop_plant_position_radius),
-                                                    0,
-                                                    _z + Random.Range(-crop_plant_position_radius, crop_plant_position_radius));
-        }
+        GameObject plant = Instantiate(diff_growth_stages_plant_refs[target_growth_stage-1],
+                            new Vector3(_x, 0, _z), Quaternion.identity) as GameObject;
         
-        float _plant_radius = ClampValueToMaxMin(AveragePlusRandom(plant_average_radius[target_growth_stage-1],
-                                                                    plant_radius_random[target_growth_stage - 1]), 0f, 2f);//////////
-        float _plant_size = ClampValueToMaxMin(AveragePlusRandom(plant_average_Yscale[target_growth_stage - 1],
-                                                                    plant_Yscale_random[target_growth_stage - 1]), 0f, 2f);//////////
+        float _plant_radius = AveragePlusRandom(plant_average_radius[target_growth_stage-1],
+                                                plant_radius_random[target_growth_stage - 1]);
+        float _plant_size = AveragePlusRandom(plant_average_Yscale[target_growth_stage - 1],
+                                              plant_Yscale_random[target_growth_stage - 1]);
         plant.transform.localScale = new Vector3( _plant_radius, _plant_size, _plant_radius);
         plant.transform.Rotate(Vector3.up, Random.Range(0, 360));
         plant.transform.parent = _parent_row.transform;
-
         
         all_target_plants.Add(plant);
-
-
-
     }
 
     /// <summary>
@@ -664,10 +696,8 @@ public class Field : MonoBehaviour
     private void PlaceLight()
     {
         float elevation = AveragePlusRandom(sun_average_elevation, sun_elevation_random);
-        elevation = ClampValueToMaxMin(elevation, 0f, 180f);
 
         float azimuth = AveragePlusRandom(sun_average_azimuth, sun_azimuth_random);
-        azimuth = ClampValueToMaxMin(azimuth, -90, 90f);
         directional_light_ref.transform.eulerAngles = new Vector3(elevation, 0, 0);//control elevation
         directional_light_ref.transform.Rotate(Vector3.up, azimuth); //control azimuth (but modified since we do not calculate from the north)
     }
@@ -841,7 +871,7 @@ public class Field : MonoBehaviour
     /// <returns></returns>
     private float AveragePlusRandom(float _average, float _random)
     {
-        return _average + Random.Range(-_random, _random);
+        return _average + Random.Range(-_random* _average, _random* _average);
     }
 
     /// <summary>

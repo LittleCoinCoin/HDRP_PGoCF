@@ -78,6 +78,7 @@ public class FieldEditor : Editor
         serializedObject.ApplyModifiedProperties();
 
         GenerateButtonManager();
+        ShowFieldButtonManager();
 
         EditorGUILayout.Space();
 
@@ -91,15 +92,10 @@ public class FieldEditor : Editor
 
     private void FieldParametersManager()
     {
+        open_field_parameters_property.boolValue = EditorGUILayout.Foldout(
+            open_field_parameters_property.boolValue, "Field parameters", true, EditorStyles.foldoutHeader);
+
         EditorGUILayout.BeginVertical("Box");
-        EditorGUILayout.BeginHorizontal();
-        if (GUILayout.Button(field_parameters_panel_texture, popupStyle, GUILayout.Width(20), GUILayout.Height(15)))
-        {
-            open_field_parameters_property.boolValue = !open_field_parameters_property.boolValue;
-        }
-        EditorGUILayout.LabelField("Field parameters", EditorStyles.boldLabel);
-        //GUILayout.Toggle(open_field_parameters, "show");
-        EditorGUILayout.EndHorizontal();
         
         if (EditorGUILayout.BeginFadeGroup(Bool2Float(open_field_parameters_property.boolValue)))
         {
@@ -140,26 +136,16 @@ public class FieldEditor : Editor
 
     private void PlantParametersManager()
     {
+        open_plant_parameters_property.boolValue = EditorGUILayout.Foldout(
+            open_plant_parameters_property.boolValue, "Plant parameters", true, EditorStyles.foldoutHeader);
+
         EditorGUILayout.BeginVertical("Box");
-        EditorGUILayout.BeginHorizontal();
-        if (GUILayout.Button(plant_parameters_panel_texture, popupStyle, GUILayout.Width(20), GUILayout.Height(15)))
-        {
-            open_plant_parameters_property.boolValue = !open_plant_parameters_property.boolValue;
-        }
-        EditorGUILayout.LabelField("Plant parameters", EditorStyles.boldLabel);
-        //GUILayout.Toggle(open_field_parameters, "show");
-        EditorGUILayout.EndHorizontal();
         if (EditorGUILayout.BeginFadeGroup(Bool2Float(open_plant_parameters_property.boolValue)))
         {
             using (new EditorGUI.IndentLevelScope())
             {
                 //Updating array sizes
-                if (serializedObject.FindProperty("diff_growth_stages_plant_refs").arraySize !=
-                            serializedObject.FindProperty("field_monitoring_iterations").intValue)
-                {
-                    
 
-                }
                 //Plants Game Objects array
                 serializedObject.FindProperty("diff_growth_stages_plant_refs").arraySize =
                 serializedObject.FindProperty("field_monitoring_iterations").intValue;
@@ -205,13 +191,8 @@ public class FieldEditor : Editor
                 {
                     using (new EditorGUI.IndentLevelScope())
                     {
-                        EditorGUILayout.BeginHorizontal();
-                        if (GUILayout.Button(open_PGS_parameters_textures[i], popupStyle, GUILayout.Width(15), GUILayout.Height(15)))
-                        {
-                            open_PGS_parameters_property.GetArrayElementAtIndex(i).boolValue = !open_PGS_parameters_property.GetArrayElementAtIndex(i).boolValue;
-                        }
-                        EditorGUILayout.LabelField($"Growth Stage {i + 1}", EditorStyles.boldLabel);
-                        EditorGUILayout.EndHorizontal();
+                        open_PGS_parameters_property.GetArrayElementAtIndex(i).boolValue = EditorGUILayout.Foldout(
+                            open_PGS_parameters_property.GetArrayElementAtIndex(i).boolValue, $"Growth Stage {i + 1}", true, EditorStyles.foldoutHeader);
 
                         if (EditorGUILayout.BeginFadeGroup(Bool2Float(open_PGS_parameters_property.GetArrayElementAtIndex(i).boolValue)))
                         {
@@ -289,15 +270,10 @@ public class FieldEditor : Editor
 
     private void WeedParametersManager()
     {
+        open_weed_parameters_property.boolValue = EditorGUILayout.Foldout(
+            open_weed_parameters_property.boolValue, "Weed parameters", true, EditorStyles.foldoutHeader);
+
         EditorGUILayout.BeginVertical("Box");
-        EditorGUILayout.BeginHorizontal();
-        if (GUILayout.Button(weed_parameters_panel_texture, popupStyle, GUILayout.Width(20), GUILayout.Height(15)))
-        {
-            open_weed_parameters_property.boolValue = !open_weed_parameters_property.boolValue;
-        }
-        EditorGUILayout.LabelField("Weed parameters", EditorStyles.boldLabel);
-        //GUILayout.Toggle(open_field_parameters, "show");
-        EditorGUILayout.EndHorizontal();
         if (EditorGUILayout.BeginFadeGroup(Bool2Float(open_weed_parameters_property.boolValue)))
         {
             using (new EditorGUI.IndentLevelScope())
@@ -415,15 +391,10 @@ public class FieldEditor : Editor
 
     private void CropRowsParametersManager()
     {
+        open_CR_parameters_property.boolValue = EditorGUILayout.Foldout(
+            open_CR_parameters_property.boolValue, "Crops Rows parameters", true, EditorStyles.foldoutHeader);
+
         EditorGUILayout.BeginVertical("Box");
-        EditorGUILayout.BeginHorizontal();
-        if (GUILayout.Button(CR_parameters_panel_texture, popupStyle, GUILayout.Width(20), GUILayout.Height(15)))
-        {
-            open_CR_parameters_property.boolValue = !open_CR_parameters_property.boolValue;
-        }
-        EditorGUILayout.LabelField("Crops Rows parameters", EditorStyles.boldLabel);
-        //GUILayout.Toggle(open_field_parameters, "show");
-        EditorGUILayout.EndHorizontal();
         if (EditorGUILayout.BeginFadeGroup(Bool2Float(open_CR_parameters_property.boolValue)))
         {
             using (new EditorGUI.IndentLevelScope())
@@ -478,15 +449,10 @@ public class FieldEditor : Editor
 
     private void SunParametersManager()
     {
+        open_sun_parameters_property.boolValue = EditorGUILayout.Foldout(
+            open_sun_parameters_property.boolValue, "Sun parameters", true, EditorStyles.foldoutHeader);
+
         EditorGUILayout.BeginVertical("Box");
-        EditorGUILayout.BeginHorizontal();
-        if (GUILayout.Button(sun_parameters_panel_texture, popupStyle, GUILayout.Width(20), GUILayout.Height(15)))
-        {
-            open_sun_parameters_property.boolValue = !open_sun_parameters_property.boolValue;
-        }
-        EditorGUILayout.LabelField("Sun parameters", EditorStyles.boldLabel);
-        //GUILayout.Toggle(open_field_parameters, "show");
-        EditorGUILayout.EndHorizontal();
 
         if (EditorGUILayout.BeginFadeGroup(Bool2Float(open_sun_parameters_property.boolValue)))
         {
@@ -519,15 +485,10 @@ public class FieldEditor : Editor
 
     private void DroneParametersManager()
     {
+        open_drone_parameters_property.boolValue = EditorGUILayout.Foldout(
+            open_drone_parameters_property.boolValue, "Drone parameters", true, EditorStyles.foldoutHeader);
+
         EditorGUILayout.BeginVertical("Box");
-        EditorGUILayout.BeginHorizontal();
-        if (GUILayout.Button(drone_parameters_panel_texture, popupStyle, GUILayout.Width(20), GUILayout.Height(15)))
-        {
-            open_drone_parameters_property.boolValue = !open_drone_parameters_property.boolValue;
-        }
-        EditorGUILayout.LabelField("Drone parameters", EditorStyles.boldLabel);
-        //GUILayout.Toggle(open_field_parameters, "show");
-        EditorGUILayout.EndHorizontal();
 
         if (EditorGUILayout.BeginFadeGroup(Bool2Float(open_drone_parameters_property.boolValue)))
         {
@@ -595,15 +556,11 @@ public class FieldEditor : Editor
 
     private void RenderingParametersManager()
     {
+        open_rendering_parameters_property.boolValue = EditorGUILayout.Foldout(
+            open_rendering_parameters_property.boolValue, "Labelling rendering parameters", true, EditorStyles.foldoutHeader);
+
         EditorGUILayout.BeginVertical("Box");
-        EditorGUILayout.BeginHorizontal();
-        if (GUILayout.Button(rendering_parameters_panel_texture, popupStyle, GUILayout.Width(20), GUILayout.Height(15)))
-        {
-            open_rendering_parameters_property.boolValue = !open_rendering_parameters_property.boolValue;
-        }
-        EditorGUILayout.LabelField("Labelling rendering parameters", EditorStyles.boldLabel);
-        //GUILayout.Toggle(open_field_parameters, "show");
-        EditorGUILayout.EndHorizontal();
+
         if (EditorGUILayout.BeginFadeGroup(Bool2Float(open_rendering_parameters_property.boolValue)))
         {
             EditorGUI.BeginChangeCheck();
@@ -654,6 +611,14 @@ public class FieldEditor : Editor
         if (GUILayout.Button("Generate Field"))
         {
             field_ref.Generator();
+        }
+    }
+
+    private void ShowFieldButtonManager()
+    {
+        if (GUILayout.Button("Show Field"))
+        {
+            field_ref.ShowFieldAtTargetMonitoringStage();
         }
     }
 
