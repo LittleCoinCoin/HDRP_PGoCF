@@ -303,8 +303,21 @@ public class FieldEditor : Editor
 
                 }
 
-                EditorGUILayout.PropertyField(serializedObject.FindProperty("_weed_local_random"),
-                    new GUIContent("Position Variability", "Modifies the position of \"Weed 3D object\" on the X and Z axis after Perlin Noise instanciation."));
+                EditorGUILayout.PropertyField(serializedObject.FindProperty("_weed_average_local_position_modifier_x"),
+                    new GUIContent("Average X Offset", "Modifies the average position of \"Weed 3D object\" on the X after Perlin Noise instanciation."));
+                using (new EditorGUI.IndentLevelScope())
+                {
+                    EditorGUILayout.PropertyField(serializedObject.FindProperty("_weed_local_position_modifier_x_random"),
+                    new GUIContent("Variability", "Modifies the position of \"Weed 3D object\" on the X after Perlin Noise instanciation."));
+                }
+
+                EditorGUILayout.PropertyField(serializedObject.FindProperty("_weed_average_local_position_modifier_z"),
+                    new GUIContent("Average Z Offset", "Modifies the average position of \"Weed 3D object\" on the Z after Perlin Noise instanciation."));
+                using (new EditorGUI.IndentLevelScope())
+                {
+                    EditorGUILayout.PropertyField(serializedObject.FindProperty("_weed_local_position_modifier_z_random"),
+                    new GUIContent("Variability", "Modifies the position of \"Weed 3D object\" on the Z after Perlin Noise instanciation."));
+                }
 
                 EditorGUILayout.Space();
 
@@ -364,13 +377,13 @@ public class FieldEditor : Editor
                         if (_weedPN_AutoUpdateProperty.boolValue)
                         {
                             serializedObject.ApplyModifiedProperties();//mandatory
-                            field_ref.Preview_WeedPerlinNoise();
+                            field_ref.Preview_WeedPerlinNoise(true);
                         }
                     }
 
                     if (GUILayout.Button("Preview"))
                     {
-                        field_ref.Preview_WeedPerlinNoise();
+                        field_ref.Preview_WeedPerlinNoise(true);
                     }
                     GUILayout.EndHorizontal();
 

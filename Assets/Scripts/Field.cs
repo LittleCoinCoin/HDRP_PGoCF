@@ -94,9 +94,12 @@ public class Field : MonoBehaviour
     [Range(0f, 1f)] public float weed_Yscale_random = 0.5f;
     [Min(0f)] public float weed_average_radius = 1f;
     [Range(0f, 1f)] public float weed_radius_random = 0.5f;
-    [Min(0f)] public float _weed_growth_threshold = 0.5f;
+    [Range(0f, 1f)] public float _weed_growth_threshold = 0.5f;
     [Range(0f, 1f)] public float _weed_growing_probability = 0.5f;
-    public Vector2 _weed_local_random = Vector2.zero;
+    [Min(0f)] public float _weed_average_local_position_modifier_x = 1f;
+    [Range(0f, 1f)] public float _weed_local_position_modifier_x_random = 0.1f;
+    [Min(0f)] public float _weed_average_local_position_modifier_z = 1f;
+    [Range(0f, 1f)] public float _weed_local_position_modifier_z_random = 0.1f;
 
     //Perlin Noise parameters for the Weed map
     public int _weed_PN_MapHeight = 100;
@@ -621,15 +624,19 @@ public class Field : MonoBehaviour
                 {
                     if (Random.Range(0f, 1f) < _weed_growing_probability)
                     {
-                        float pre_x_weed = ClampValueToMaxMin(AveragePlusRandom(i, _weed_local_random.x), 0f, _weed_PN_MapWidth);
-                        float pre_y_weed = ClampValueToMaxMin(AveragePlusRandom(j, _weed_local_random.y), 0f, _weed_PN_MapHeight);
+                        float _var_x = AveragePlusRandom(_weed_average_local_position_modifier_x, _weed_local_position_modifier_x_random);
+                        float pre_x_weed = ClampValueToMaxMin(i+Random.Range(-_var_x, _var_x),0f, _weed_PN_MapWidth);
+
+                        float _var_z = AveragePlusRandom(_weed_average_local_position_modifier_z, _weed_local_position_modifier_z_random);
+                        float pre_y_weed = ClampValueToMaxMin(j+ Random.Range(-_var_z, _var_z), 0f, _weed_PN_MapHeight);
+
                         x_weed = pre_x_weed / _weed_PN_MapWidth * width * field_size - field_size / 2;
                         z_weed = pre_y_weed / _weed_PN_MapHeight * height * field_size - field_size / 2;
                         GameObject _weed = Instantiate(weed_ref, new Vector3(x_weed, 0, z_weed), Quaternion.identity);
                         _weed.transform.eulerAngles = new Vector3(-90, Random.Range(0, 360), 0);
-                        float _weed_radius = ClampValueToMaxMin(AveragePlusRandom(weed_average_radius, weed_radius_random), 0f, 2f);
-                        float _weed_size = ClampValueToMaxMin(AveragePlusRandom(weed_average_Yscale, weed_Yscale_random), 0f, 2f);
-                        _weed.transform.localScale = new Vector3(_weed_radius, _weed_radius, _weed_size); //because of the rotation the radius is on X and Y axis and the size on the Z axis
+                        float _weed_radius = AveragePlusRandom(weed_average_radius, weed_radius_random);
+                        float _weed_size = AveragePlusRandom(weed_average_Yscale, weed_Yscale_random);
+                        _weed.transform.localScale = new Vector3(_weed_radius, _weed_radius, _weed_size); //because of the rotation, the radius is on X and Y axis and the size on the Z axis
                         _weed.transform.parent = instantiated_field_holder.transform;
                     }
                 }
@@ -638,7 +645,7 @@ public class Field : MonoBehaviour
 
         if (_weed_PN_enablePreview)
         {
-            Preview_WeedPerlinNoise();
+            Preview_WeedPerlinNoise(false);
         }
     }
 
@@ -646,10 +653,15 @@ public class Field : MonoBehaviour
     /// Generates the preview textures for the Perlin noise distribution of the weed in the field. The previews are displayed
     /// in the inspector if the option "Enable preview" checked.
     /// </summary>
-    public void Preview_WeedPerlinNoise()
+    /// <param name="_Generate_Noise_Map"> Call the GenerateNoiseMap method prior to visalization</param>
+    public void Preview_WeedPerlinNoise(bool _Generate_Noise_Map)
     {
-        _weed_PN_NoiseMap = GenerateNoiseMap(_weed_PN_MapWidth, _weed_PN_MapHeight, _weed_PN_Seed,
-            _weed_PN_Octaves, _weed_PN_NoiseScale, _weed_PN_Persistance, _weed_PN_Lacunarity, _weed_PN_Offset, _weed_PN_Offset_random);
+        if (_Generate_Noise_Map)
+        {
+            _weed_PN_NoiseMap = GenerateNoiseMap(_weed_PN_MapWidth, _weed_PN_MapHeight, _weed_PN_Seed,
+                                                _weed_PN_Octaves, _weed_PN_NoiseScale, _weed_PN_Persistance,
+                                                _weed_PN_Lacunarity, _weed_PN_Offset, _weed_PN_Offset_random);
+        }
         _weed_PN_Texture = GenerateTextureNoiseMap(_weed_PN_NoiseMap);
 
         _weed_PN_NoiseMap_Thresholded = _weed_PN_NoiseMap;
