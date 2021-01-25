@@ -1,4 +1,5 @@
 ﻿using UnityEngine;
+using System.Collections.Generic;
 using System.IO;
 using System.Globalization;
 
@@ -8,6 +9,9 @@ public class TargetPlantCounting : MonoBehaviour
     private Plane[] camFrustrumPlanes;
     
     public Field field_generator_ref;
+
+    public GameObject _debug_object;
+    private List<GameObject> _debug_positions_objects = new List<GameObject>();
 
     private void Update()
     {
@@ -54,7 +58,8 @@ public class TargetPlantCounting : MonoBehaviour
 
         foreach (GameObject _targetPlant in field_generator_ref.all_target_plants)
         {
-            if ((_targetPlant.transform.position.x > boundaries[3] && _targetPlant.transform.position.x < boundaries[2]) &&
+            if (_targetPlant.activeSelf &&
+                (_targetPlant.transform.position.x > boundaries[3] && _targetPlant.transform.position.x < boundaries[2]) &&
                 (_targetPlant.transform.position.z > boundaries[1] && _targetPlant.transform.position.z < boundaries[0]))
             {
                 counter++;
@@ -62,7 +67,7 @@ public class TargetPlantCounting : MonoBehaviour
                 //Vector2 plant_viewPort = DroneCamera.WorldToViewportPoint(_targetPlant.transform.position);
 
                 Vector3 _correctedTransform = new Vector3(_targetPlant.transform.position.x,
-                                                          _targetPlant.transform.position.y + _targetPlant.transform.localScale.y,
+                                                          _targetPlant.transform.position.y + _targetPlant.transform.localScale.y * _targetPlant.GetComponent<MeshFilter>().sharedMesh.bounds.size.y,//_targetPlant.transform.localScale.y,
                                                           _targetPlant.transform.position.z);
 
                 Vector2 _corrected_plant_ViewPort = DroneCamera.WorldToViewportPoint(_correctedTransform);
@@ -77,7 +82,39 @@ public class TargetPlantCounting : MonoBehaviour
         }
 
         sw.Close();
-
         return counter;
+    }
+
+    public void ShowDebugPositions()
+    {
+        DestroyDebugPositions();
+
+        float[] boundaries = DroneCamera.GetComponent<CameraVision>().VisionBoundariesOnField();
+        _debug_positions_objects = new List<GameObject>();
+        foreach (GameObject _targetPlant in field_generator_ref.all_target_plants)
+        {
+            if (_targetPlant.activeSelf &&
+                (_targetPlant.transform.position.x > boundaries[3] && _targetPlant.transform.position.x < boundaries[2]) &&
+                (_targetPlant.transform.position.z > boundaries[1] && _targetPlant.transform.position.z < boundaries[0]))
+            {
+
+                //Debug.Log(_targetPlant.GetComponent<MeshFilter>().sharedMesh.bounds.size.y);
+                Vector3 _correctedTransform = new Vector3(_targetPlant.transform.position.x,
+                                                          _targetPlant.transform.position.y + 
+                                                          _targetPlant.transform.localScale.y * _targetPlant.GetComponent<MeshFilter>().sharedMesh.bounds.size.y,//_targetPlant.transform.localScale.y,
+                                                          _targetPlant.transform.position.z);
+
+                GameObject _debug = Instantiate(_debug_object, _correctedTransform, Quaternion.identity);
+                _debug_positions_objects.Add(_debug);
+            }
+        }
+    }
+
+    public void DestroyDebugPositions()
+    {
+        foreach(GameObject _g in _debug_positions_objects)
+        {
+            DestroyImmediate(_g);
+        }
     }
 }

@@ -221,14 +221,14 @@ public class CaptureImage : MonoBehaviour
             filename = uniqueFilename(captureWidth, captureHeight);
             TakeScreenshot(filename);
 
-            field_generator_ref.labellingMode = !field_generator_ref.labellingMode;//changing the labelling mode
-            field_generator_ref.Render();
+            //field_generator_ref.labellingMode = !field_generator_ref.labellingMode;//changing the labelling mode
+            //field_generator_ref.Render();
 
-            filename = uniqueFilename(captureWidth, captureHeight);
-            TakeScreenshot(filename);
+            //filename = uniqueFilename(captureWidth, captureHeight);
+            //TakeScreenshot(filename);
 
-            field_generator_ref.labellingMode = !field_generator_ref.labellingMode;//back to initial labelling mode
-            field_generator_ref.Render();
+            //field_generator_ref.labellingMode = !field_generator_ref.labellingMode;//back to initial labelling mode
+            //field_generator_ref.Render();
 
             counter++;//increasing counter after both photo modes have been captured.
 

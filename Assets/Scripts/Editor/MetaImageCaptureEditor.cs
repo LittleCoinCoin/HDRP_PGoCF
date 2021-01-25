@@ -67,7 +67,7 @@ public class MetaImageCaptureEditor : Editor
     {
         for (int i = 0; i < _metaImageCapture_ref.numberOfFields; i++)
         {
-            _metaImageCapture_ref.fieldGenerator_ref.Generator();
+            //_metaImageCapture_ref.fieldGenerator_ref.Generator();
             _metaImageCapture_ref.fieldGenerator_ref.drone_ref.GetComponent<DroneBehaviour>().CaptureGridSubset(
                 minWidthGridSubset_property.intValue, maxWidthGridSubset_property.intValue,
                 minHeightGridSubset_property.intValue, maxHeightGridSubset_property.intValue);
@@ -78,7 +78,7 @@ public class MetaImageCaptureEditor : Editor
     {
         for (int i = 0; i < _metaImageCapture_ref.numberOfFields; i++)
         {
-            _metaImageCapture_ref.fieldGenerator_ref.Generator();
+            //_metaImageCapture_ref.fieldGenerator_ref.Generator();
             _metaImageCapture_ref.fieldGenerator_ref.drone_ref.GetComponent<DroneBehaviour>().AllImageCapture();
         }
     }
