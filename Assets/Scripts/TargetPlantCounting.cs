@@ -72,13 +72,27 @@ public class TargetPlantCounting : MonoBehaviour
 
                 Vector2 _corrected_plant_ViewPort = DroneCamera.WorldToViewportPoint(_correctedTransform);
 
-                sw.WriteLine(_targetPlant.transform.position.x.ToString("G", CultureInfo.InvariantCulture) + "," +
-                             _targetPlant.transform.position.z.ToString("G", CultureInfo.InvariantCulture) + "," +
-                             //plant_viewPort.x.ToString("G", CultureInfo.InvariantCulture) + "," +
-                             //plant_viewPort.y.ToString("G", CultureInfo.InvariantCulture) + "," +
-                             _corrected_plant_ViewPort.x.ToString("G", CultureInfo.InvariantCulture) + "," +
-                             _corrected_plant_ViewPort.y.ToString("G", CultureInfo.InvariantCulture));
+                Vector3 _NE_bounding_box = new Vector3(_targetPlant.transform.position.x + _targetPlant.transform.localScale.x * _targetPlant.GetComponent<MeshFilter>().sharedMesh.bounds.size.x,
+                                                    _targetPlant.transform.position.y + _targetPlant.transform.localScale.y * _targetPlant.GetComponent<MeshFilter>().sharedMesh.bounds.size.y,
+                                                    _targetPlant.transform.position.z + _targetPlant.transform.localScale.z * _targetPlant.GetComponent<MeshFilter>().sharedMesh.bounds.size.z);
+
+                Vector3 _SW_bounding_box = new Vector3(_targetPlant.transform.position.x - _targetPlant.transform.localScale.x * _targetPlant.GetComponent<MeshFilter>().sharedMesh.bounds.size.x,
+                                                    _targetPlant.transform.position.y + _targetPlant.transform.localScale.y * _targetPlant.GetComponent<MeshFilter>().sharedMesh.bounds.size.y,
+                                                    _targetPlant.transform.position.z - _targetPlant.transform.localScale.z * _targetPlant.GetComponent<MeshFilter>().sharedMesh.bounds.size.z);
+
+                Vector2 _onScreen_NE_Bounding_Box = DroneCamera.WorldToViewportPoint(_NE_bounding_box);
+                Vector2 _onScreen_SW_Bounding_Box = DroneCamera.WorldToViewportPoint(_SW_bounding_box);
+
+                sw.WriteLine(_targetPlant.transform.position.x.ToString("G", CultureInfo.InvariantCulture) + "," + //this is the virtual world x position
+                             _targetPlant.transform.position.z.ToString("G", CultureInfo.InvariantCulture) + "," + //this is the virtual world y position
+                             _corrected_plant_ViewPort.x.ToString("G", CultureInfo.InvariantCulture) + "," + //this is the screen x position
+                             _corrected_plant_ViewPort.y.ToString("G", CultureInfo.InvariantCulture) + "," + //this is the screen world y position
+                             (_onScreen_NE_Bounding_Box.x - _onScreen_SW_Bounding_Box.x).ToString("G", CultureInfo.InvariantCulture) + "," + //this is the plant width on the screen
+                             (_onScreen_NE_Bounding_Box.y - _onScreen_SW_Bounding_Box.y).ToString("G", CultureInfo.InvariantCulture) + "," + //this is the plant height on the screen
+                             _targetPlant.transform.eulerAngles.y.ToString("G", CultureInfo.InvariantCulture) // rotation of the plant to rotate the box accordingly.
+                             ); 
             }
+
         }
 
         sw.Close();
