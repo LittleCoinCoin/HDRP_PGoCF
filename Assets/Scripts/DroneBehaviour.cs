@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Perception.GroundTruth;
 
 public class DroneBehaviour : MonoBehaviour
 {
@@ -25,6 +26,8 @@ public class DroneBehaviour : MonoBehaviour
     public float x_overlapping;
     public float y_overlapping;
 
+    public TargetPlantCounting plantCounter;
+
     // Start is called before the first frame update
     void Start()
     {
@@ -48,7 +51,8 @@ public class DroneBehaviour : MonoBehaviour
         {
             if (Input.GetKeyDown(KeyCode.I))
             {
-                AllImageCapture();
+                StartCoroutine(AllImageCapture());
+                //GetComponentInChildren<PerceptionCamera>().RequestCapture();
             }
         }
     }
@@ -177,7 +181,7 @@ public class DroneBehaviour : MonoBehaviour
     /// <summary>
     /// Take all possible images at the coordinates the grid that covers the field
     /// </summary>
-    public void AllImageCapture()
+    public IEnumerator AllImageCapture()
     {
         
         StartPosition();
@@ -209,21 +213,27 @@ public class DroneBehaviour : MonoBehaviour
             {
                 OnGridMovement(1, 0);
             }
+            yield return new WaitForEndOfFrame();
+            //gameObject.GetComponentInChildren<CaptureImage>().TakePicture();
+            plantCounter.With_Perception();
+            yield return new WaitForEndOfFrame();
 
-            gameObject.GetComponentInChildren<CaptureImage>().TakePicture();
 
             y_direction = forward ? 1 : -1;
 
             for (int j = 0; j < y_steps; j++)
             {
                 OnGridMovement(0, y_direction);
-                gameObject.GetComponentInChildren<CaptureImage>().TakePicture();
+                //gameObject.GetComponentInChildren<CaptureImage>().TakePicture();
+                yield return new WaitForEndOfFrame();
+                plantCounter.With_Perception();
+                yield return new WaitForEndOfFrame();
             }
 
             forward = !forward;
         }
 
-        gameObject.GetComponentInChildren<CaptureImage>().parameter_saved = false;
+        //gameObject.GetComponentInChildren<CaptureImage>().parameter_saved = false;
     }
 
     /// <summary>

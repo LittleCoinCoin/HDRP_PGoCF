@@ -91,5 +91,5 @@ Material:
     - _BlendingColor: {r: 2.5283017, g: 1.5341436, b: 1.228373, a: 1}
     - _DoubleSidedConstants: {r: 1, g: 1, b: -1, a: 0}
     - _EmissionColor: {r: 1, g: 1, b: 1, a: 1}
-    - _Vector2Tiling: {r: 2.3600442, g: 2.3600442, b: 0, a: 0}
+    - _Vector2Tiling: {r: 2.1938426, g: 2.1938426, b: 0, a: 0}
     - _Vector2TilingOffset: {r: 0, g: 0, b: 0, a: 0}
