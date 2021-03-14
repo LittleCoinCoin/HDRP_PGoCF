@@ -23,8 +23,6 @@ MonoBehaviour:
     color: {r: 1, g: 1, b: 1, a: 1}
   - label: Weed
     color: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
-<<<<<<< Updated upstream
-=======
   - label: Plant_B1
     color: {r: 0.5, g: 0.5, b: 0.5, a: 1}
   - label: Plant_D2
@@ -33,4 +31,3 @@ MonoBehaviour:
     color: {r: 1, g: 0.14985347, b: 0.9495041, a: 1}
   - label: Plant_D1
     color: {r: 0.2264151, g: 0, b: 0.17952433, a: 1}
->>>>>>> Stashed changes

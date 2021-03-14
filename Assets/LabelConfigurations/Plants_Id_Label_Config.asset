@@ -15,16 +15,6 @@ MonoBehaviour:
   m_LabelEntries:
   - label: Plant_A2
     id: 1
-<<<<<<< Updated upstream
-  - label: Plant_B3B4
-    id: 2
-  - label: Plant_E1
-    id: 3
-  - label: Plant_F3
-    id: 4
-  - label: Weed
-    id: 5
-=======
   - label: Plant_B1
     id: 2
   - label: Plant_B3B4
@@ -41,6 +31,5 @@ MonoBehaviour:
     id: 8
   - label: Weed
     id: 9
->>>>>>> Stashed changes
   autoAssignIds: 1
   startingLabelId: 1
