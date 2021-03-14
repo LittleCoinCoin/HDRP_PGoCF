@@ -17,7 +17,6 @@ public class DroneBehaviour : MonoBehaviour
     private float current_flying_speed;
 
     //Smooth damp parameters
-    //public float _smoothTime = 0;
     private Vector3 velocity = Vector3.zero;
 
     //automatic flight parameters

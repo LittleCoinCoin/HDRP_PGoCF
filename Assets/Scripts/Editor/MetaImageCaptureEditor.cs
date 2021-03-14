@@ -39,30 +39,12 @@ public class MetaImageCaptureEditor : Editor
             new GUIContent("Min Height", "Subset's minimum bound of the height of the grid on which we capture images."));
         EditorGUILayout.PropertyField(maxHeightGridSubset_property,
             new GUIContent("Max Height", "Subset's maximum bound of the height of the grid on which we capture images."));
-
-        //This button cannot exist anymore since we moved to Unity Perception package
-
-        //if (GUILayout.Button("Capture Subset Images of All Fields"))
-        //{
-        //    _metaImageCapture_ref.capturingCamera_ref.GetComponent<CaptureImage>().RootFolder =
-        //        _metaImageCapture_ref.rootFolder + "/" + _metaImageCapture_ref.metaCapture_FolderName;
-        //    _metaImageCapture_ref.CaptureSubsetImages_AllFields();
-        //}
         
         EditorGUILayout.EndToggleGroup();
 
         EditorGUILayout.Space();
 
         EditorGUI.BeginDisabledGroup(GridSubsetCapture_property.boolValue);
-
-        //This button cannot exist anymore since we moved to Unity Perception package
-
-        //if (GUILayout.Button("Capture All Images of All Fields"))
-        //{
-        //    _metaImageCapture_ref.capturingCamera_ref.GetComponent<CaptureImage>().RootFolder =
-        //       _metaImageCapture_ref.rootFolder + "/" + _metaImageCapture_ref.metaCapture_FolderName;
-        //    _metaImageCapture_ref.CaptureAllImages_AllFields();
-        //}
 
         EditorGUI.EndDisabledGroup();
     }
@@ -71,11 +53,6 @@ public class MetaImageCaptureEditor : Editor
     {
         EditorGUILayout.PropertyField(serializedObject.FindProperty("fieldGenerator_ref"));
         EditorGUILayout.PropertyField(serializedObject.FindProperty("capturingCamera_ref"));
-
-        //These properties cannot exist anymore since we moved to Unity Perception package
-        //EditorGUILayout.PropertyField(serializedObject.FindProperty("rootFolder"));
-        //EditorGUILayout.PropertyField(serializedObject.FindProperty("metaCapture_FolderName"));
-        //EditorGUILayout.PropertyField(serializedObject.FindProperty("numberOfFields"));
     }
 
     private void CatchProperties()

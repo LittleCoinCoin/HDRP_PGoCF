@@ -7,19 +7,12 @@ public class MetaImageCapture : MonoBehaviour
     public Field fieldGenerator_ref;
 
     public Camera capturingCamera_ref;
-
-    //These parameters are no longer needed since we use Unity Perception.
-    //To be removed.
-    //public string rootFolder;
-    //public string metaCapture_FolderName;
-
+    
     public bool GridSubsetCapture = false;
     public int minWidthGridSubset;
     public int maxWidthGridSubset;
     public int minHeightGridSubset;
     public int maxHeightGridSubset;
-
-    //[Min(1)] public int numberOfFields;
 
     public bool CaptureOrder = false;
     public bool CaptureDone = false;
@@ -49,36 +42,12 @@ public class MetaImageCapture : MonoBehaviour
         }
     }
 
-    //These methods are no longer needed after upgrade to Unity Perrception.
-    //TO BE REMOVED
-
-    //public void CaptureSubsetImages_AllFields()
-    //{
-    //    for (int i = 0; i < numberOfFields; i++)
-    //    {
-    //        fieldGenerator_ref.drone_ref.GetComponent<DroneBehaviour>().CaptureGridSubset(
-    //            minWidthGridSubset, maxWidthGridSubset,
-    //            minHeightGridSubset, maxHeightGridSubset);
-    //        fieldGenerator_ref.Generator();
-    //    }
-    //}
-
-    //public void CaptureAllImages_AllFields()
-    //{
-    //    for (int i = 0; i < numberOfFields; i++)
-    //    {
-    //        DatasetCapture.StartNewSequence();
-    //        StartCoroutine(fieldGenerator_ref.drone_ref.GetComponent<DroneBehaviour>().AllImageCapture());
-    //        fieldGenerator_ref.Generator();
-    //        EditorApplication.isPlaying = true;
-            
-    //    }
-    //}
-
     public IEnumerator CaptureSubsetImages_AllGrowthStages()
     {
+        Debug.Log("Capture Subset Images at all Growth Stages");
         for (int i = 1; i <= fieldGenerator_ref.field_monitoring_iterations; i++)
         {
+            Debug.Log($"Capturing Images at Growth Stage {i}/{fieldGenerator_ref.field_monitoring_iterations}");
             fieldGenerator_ref.target_growth_stage = i;
             fieldGenerator_ref.ShowFieldAtTargetMonitoringStage();
 
@@ -96,8 +65,10 @@ public class MetaImageCapture : MonoBehaviour
 
     public IEnumerator CaptureAllImages_AllGrowthStages()
     {
+        Debug.Log("Capture All Images at all Growth Stages");
         for (int i = 1; i <= fieldGenerator_ref.field_monitoring_iterations; i++)
         {
+            Debug.Log($"Capturing Images at Growth Stage {i}/{fieldGenerator_ref.field_monitoring_iterations}");
             fieldGenerator_ref.target_growth_stage = i;
             fieldGenerator_ref.ShowFieldAtTargetMonitoringStage();
 

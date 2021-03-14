@@ -1,4 +1,5 @@
-﻿using UnityEngine.Perception.Randomization.Scenarios;
+﻿using UnityEngine;
+using UnityEngine.Perception.Randomization.Scenarios;
 
 /// <summary>
 /// This Scenario handles the capture of the images of the number of fields
@@ -37,6 +38,7 @@ public class CustomScenario : PerceptionScenario<CustomConstants>
     /// </summary>
     protected override void OnIterationStart()
     {
+        Debug.Log($"Capturing images of field {current_field_index+1}/{constants.NumberOfFields}");
         constants.ref_Field.Generator();
         constants.ref_MetaImageCature.CaptureImages();
     }
