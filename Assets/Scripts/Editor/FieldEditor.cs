@@ -654,7 +654,7 @@ public class FieldEditor : Editor
 
     private float Bool2Float(bool _b)
     {
-        return _b? 1 : 0;
+        return _b? 1f : 0f;
     }
 
     private void CatchProperties()

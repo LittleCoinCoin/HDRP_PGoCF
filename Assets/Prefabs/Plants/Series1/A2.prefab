@@ -11,6 +11,7 @@ GameObject:
   - component: {fileID: 8776874277966881890}
   - component: {fileID: 5648185949855001543}
   - component: {fileID: 7603928280158527245}
+  - component: {fileID: 4215948471814413826}
   m_Layer: 0
   m_Name: A2
   m_TagString: Untagged
@@ -80,3 +81,19 @@ MeshRenderer:
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 0
+--- !u!114 &4215948471814413826
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8252397767730331352}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8b33f0bc2b78db642a758f07826d0dd0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  labels:
+  - Plant_A2
+  useAutoLabeling: 0
+  autoLabelingSchemeType: 

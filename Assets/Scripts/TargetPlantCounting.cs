@@ -1,4 +1,6 @@
 ﻿using UnityEngine;
+using UnityEngine.Perception.GroundTruth;
+using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Globalization;
@@ -12,6 +14,12 @@ public class TargetPlantCounting : MonoBehaviour
 
     public GameObject _debug_object;
     private List<GameObject> _debug_positions_objects = new List<GameObject>();
+
+    public struct PlantAnnotation
+    {
+        public uint instance_id;
+        public Vector2 ViewPort;
+    }
 
     private void Update()
     {
@@ -97,6 +105,45 @@ public class TargetPlantCounting : MonoBehaviour
 
         sw.Close();
         return counter;
+    }
+
+    public void With_Perception()
+    {
+
+        int counter = 0;
+        float[] boundaries = DroneCamera.GetComponent<CameraVision>().VisionBoundariesOnField();
+        
+        DroneCamera.GetComponent<CustomAnnotation>().DefineViewPortAnnotation();
+
+        List<PlantAnnotation> capture = new List<PlantAnnotation>();
+
+        foreach (GameObject _targetPlant in field_generator_ref.all_target_plants)
+        {
+            if (_targetPlant.activeSelf &&
+                (_targetPlant.transform.position.x > boundaries[3] && _targetPlant.transform.position.x < boundaries[2]) &&
+                (_targetPlant.transform.position.z > boundaries[1] && _targetPlant.transform.position.z < boundaries[0]))
+            {
+                Vector3 _correctedTransform = new Vector3(_targetPlant.transform.position.x,
+                                                          _targetPlant.transform.position.y + _targetPlant.transform.localScale.y * _targetPlant.GetComponent<MeshFilter>().sharedMesh.bounds.size.y,//_targetPlant.transform.localScale.y,
+                                                          _targetPlant.transform.position.z);
+
+                Vector2 _corrected_plant_ViewPort = DroneCamera.WorldToViewportPoint(_correctedTransform);
+
+                if (0 < _corrected_plant_ViewPort.x && _corrected_plant_ViewPort.x < 1 &&
+                     0 < _corrected_plant_ViewPort.y && _corrected_plant_ViewPort.y < 1)
+                {
+                    counter++;
+
+                    capture.Add(new PlantAnnotation {
+                                        instance_id = _targetPlant.GetComponent<Labeling>().instanceId,
+                                        ViewPort = _corrected_plant_ViewPort}
+                    );
+                }
+            }
+        }
+
+        DroneCamera.GetComponent<PerceptionCamera>().RequestCapture();
+        DroneCamera.GetComponent<CustomAnnotation>().ApplyViewPortAnnotation(capture);
     }
 
     public void ShowDebugPositions()
