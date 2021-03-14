@@ -1,7 +1,5 @@
 ﻿using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.Perception.GroundTruth;
 
 public class DroneBehaviour : MonoBehaviour
 {
@@ -28,6 +26,8 @@ public class DroneBehaviour : MonoBehaviour
 
     public TargetPlantCounting plantCounter;
 
+    public bool CaptureDone = false;
+
     // Start is called before the first frame update
     void Start()
     {
@@ -45,15 +45,6 @@ public class DroneBehaviour : MonoBehaviour
         if (flyingMode == FlyingMode.ManualGrid)
         {
             GridMovementRules();
-        }
-
-        if (flyingMode == FlyingMode.ImageCapture)
-        {
-            if (Input.GetKeyDown(KeyCode.I))
-            {
-                StartCoroutine(AllImageCapture());
-                //GetComponentInChildren<PerceptionCamera>().RequestCapture();
-            }
         }
     }
 
@@ -131,112 +122,6 @@ public class DroneBehaviour : MonoBehaviour
     }
 
     /// <summary>
-    /// Only capture images on a subpart of the grid on which the drone can move
-    /// </summary>
-    /// <param name="_minWidth">Starting coordinate along the width of the field of the capture</param>
-    /// <param name="_maxWidth">Ending coordinate along the width of the field of the capture</param>
-    /// <param name="_minHeight">Starting coordinate along the height of the field of the capture</param>
-    /// <param name="_maxHeight">Ending coordinate along the height of the field of the capture</param>
-    public void CaptureGridSubset(int _minWidth, int _maxWidth, int _minHeight, int _maxHeight)
-    {
-        //Position initialized at the bottom left corner of the field
-        StartPosition();
-
-        //Moves to the first position where the image capture should begin
-        for (int i = 0; i < _minWidth; i++)
-        {
-            OnGridMovement(1, 0);
-        }
-        for (int i = 0; i < _minHeight; i++)
-        {
-            OnGridMovement(0, 1);
-        }
-        
-        //actually do the image capture
-        bool forward = true;
-        int y_direction = 0;
-        gameObject.GetComponentInChildren<CaptureImage>().counter = 0;
-        gameObject.GetComponentInChildren<CaptureImage>().SetTimeFolder();
-        for (int i = 0; i < _maxWidth-_minWidth; i++)
-        {
-            if (i > 0)
-            {
-                OnGridMovement(1, 0);
-            }
-            gameObject.GetComponentInChildren<CaptureImage>().TakePicture();
-
-            y_direction = forward ? 1 : -1;
-
-            for (int j = 0; j < _maxHeight-_minHeight-1; j++)
-            {
-                OnGridMovement(0, y_direction);
-                gameObject.GetComponentInChildren<CaptureImage>().TakePicture();
-            }
-            forward = !forward;
-        }
-
-        gameObject.GetComponentInChildren<CaptureImage>().parameter_saved = false;
-    }
-
-    /// <summary>
-    /// Take all possible images at the coordinates the grid that covers the field
-    /// </summary>
-    public IEnumerator AllImageCapture()
-    {
-        
-        StartPosition();
-
-        float[] visionBoundaries = GetComponentInChildren<CameraVision>().VisionBoundariesOnField();
-
-        float frustrum_height = visionBoundaries[0] - visionBoundaries[1];
-        float frustrum_width = visionBoundaries[2] - visionBoundaries[3];
-
-        float field_height = field_generator_ref.height * field_generator_ref.field_size;
-        float field_width = field_generator_ref.height * field_generator_ref.field_size;
-
-        int y_steps = Mathf.RoundToInt((field_generator_ref.height * field_generator_ref.field_size - frustrum_height) /
-                                        (frustrum_height * (1-y_overlapping)));
-        
-        int x_steps = Mathf.RoundToInt((field_generator_ref.width * field_generator_ref.field_size - frustrum_width) /
-                                        (frustrum_width * (1-x_overlapping)));
-        
-
-        //Debug.Log($"y_step is : {y_steps} ({field_generator_ref.height * field_generator_ref.field_size - frustrum_height} / {(frustrum_height) * (1 - y_overlapping)})");
-        //Debug.Log($"x_step is : {x_steps} ({field_generator_ref.width * field_generator_ref.field_size - frustrum_width} / {(frustrum_width) * (1 - x_overlapping)})");
-        bool forward = true;
-        int y_direction = 0;
-        gameObject.GetComponentInChildren<CaptureImage>().counter = 0;
-        gameObject.GetComponentInChildren<CaptureImage>().SetTimeFolder();
-        for (int i = 0; i <= x_steps; i++)
-        {
-            if (i > 0)
-            {
-                OnGridMovement(1, 0);
-            }
-            yield return new WaitForEndOfFrame();
-            //gameObject.GetComponentInChildren<CaptureImage>().TakePicture();
-            plantCounter.With_Perception();
-            yield return new WaitForEndOfFrame();
-
-
-            y_direction = forward ? 1 : -1;
-
-            for (int j = 0; j < y_steps; j++)
-            {
-                OnGridMovement(0, y_direction);
-                //gameObject.GetComponentInChildren<CaptureImage>().TakePicture();
-                yield return new WaitForEndOfFrame();
-                plantCounter.With_Perception();
-                yield return new WaitForEndOfFrame();
-            }
-
-            forward = !forward;
-        }
-
-        //gameObject.GetComponentInChildren<CaptureImage>().parameter_saved = false;
-    }
-
-    /// <summary>
     /// Manages the movements of the camera. The camera moves on the X-Z plane.
     /// </summary>
     private void Fly_Movement()
@@ -272,4 +157,118 @@ public class DroneBehaviour : MonoBehaviour
 
         transform.position += mov * current_flying_speed * Time.deltaTime;
     }
+
+    /// <summary>
+    /// Only capture images on a part of the grid on which the drone can move
+    /// </summary>
+    /// <param name="_minWidth">Starting coordinate along the width of the field of the capture</param>
+    /// <param name="_maxWidth">Ending coordinate along the width of the field of the capture</param>
+    /// <param name="_minHeight">Starting coordinate along the height of the field of the capture</param>
+    /// <param name="_maxHeight">Ending coordinate along the height of the field of the capture</param>
+    public IEnumerator CaptureGridSubset(int _minWidth, int _maxWidth, int _minHeight, int _maxHeight)
+    {
+        //Position initialized at the bottom left corner of the field
+        StartPosition();
+
+        //Moves to the first position where the image capture should begin
+        for (int i = 0; i < _minWidth; i++)
+        {
+            OnGridMovement(1, 0);
+        }
+        for (int i = 0; i < _minHeight; i++)
+        {
+            OnGridMovement(0, 1);
+        }
+        
+        //actually do the image capture
+        bool forward = true;
+        int y_direction = 0;
+        gameObject.GetComponentInChildren<CaptureImage>().counter = 0;
+        gameObject.GetComponentInChildren<CaptureImage>().SetTimeFolder();
+        for (int i = 0; i < _maxWidth-_minWidth; i++)
+        {
+            if (i > 0)
+            {
+                OnGridMovement(1, 0);
+            }
+            yield return new WaitForEndOfFrame();
+            plantCounter.With_Perception();
+            yield return new WaitForEndOfFrame();
+
+            y_direction = forward ? 1 : -1;
+
+            for (int j = 0; j < _maxHeight-_minHeight-1; j++)
+            {
+                OnGridMovement(0, y_direction);
+                yield return new WaitForEndOfFrame();
+                plantCounter.With_Perception();
+                yield return new WaitForEndOfFrame();
+            }
+            forward = !forward;
+        }
+        CaptureDone = true;
+    }
+
+    /// <summary>
+    /// Take all possible images at the coordinates the grid that covers the field
+    /// </summary>
+    public IEnumerator AllImageCapture()
+    {
+        StartPosition();
+
+        float[] visionBoundaries = GetComponentInChildren<CameraVision>().VisionBoundariesOnField();
+
+        float frustrum_height = visionBoundaries[0] - visionBoundaries[1];
+        float frustrum_width = visionBoundaries[2] - visionBoundaries[3];
+
+        float field_height = field_generator_ref.height * field_generator_ref.field_size;
+        float field_width = field_generator_ref.height * field_generator_ref.field_size;
+
+        int y_steps = Mathf.RoundToInt((field_generator_ref.height * field_generator_ref.field_size - frustrum_height) /
+                                        (frustrum_height * (1-y_overlapping)));
+        
+        int x_steps = Mathf.RoundToInt((field_generator_ref.width * field_generator_ref.field_size - frustrum_width) /
+                                        (frustrum_width * (1-x_overlapping)));
+        
+        bool forward = true;
+        int y_direction = 0;
+        gameObject.GetComponentInChildren<CaptureImage>().counter = 0;
+        gameObject.GetComponentInChildren<CaptureImage>().SetTimeFolder();
+        for (int i = 0; i <= x_steps; i++)
+        {
+            if (i > 0)
+            {
+                OnGridMovement(1, 0);
+            }
+            yield return new WaitForEndOfFrame();
+            plantCounter.With_Perception();
+            yield return new WaitForEndOfFrame();
+
+
+            y_direction = forward ? 1 : -1;
+
+            for (int j = 0; j < y_steps; j++)
+            {
+                OnGridMovement(0, y_direction);
+                yield return new WaitForEndOfFrame();
+                plantCounter.With_Perception();
+                yield return new WaitForEndOfFrame();
+            }
+
+            forward = !forward;
+        }
+
+        CaptureDone = true;
+    }
+
+    /// <summary>
+    /// Used as a delegate to give the value of the boolean CaptureDone
+    /// </summary>
+    /// <returns>Returns the vlue of the boolean CaptureDone</returns>
+    public bool ReturnCaptureDone()
+    {
+        return CaptureDone;
+    }
+
+    
 }

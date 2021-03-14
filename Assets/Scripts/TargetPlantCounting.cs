@@ -112,8 +112,8 @@ public class TargetPlantCounting : MonoBehaviour
 
         int counter = 0;
         float[] boundaries = DroneCamera.GetComponent<CameraVision>().VisionBoundariesOnField();
-
-        DroneCamera.GetComponent<CustomizePerception>().DefineViewPortAnnotation();
+        
+        DroneCamera.GetComponent<CustomAnnotation>().DefineViewPortAnnotation();
 
         List<PlantAnnotation> capture = new List<PlantAnnotation>();
 
@@ -123,8 +123,6 @@ public class TargetPlantCounting : MonoBehaviour
                 (_targetPlant.transform.position.x > boundaries[3] && _targetPlant.transform.position.x < boundaries[2]) &&
                 (_targetPlant.transform.position.z > boundaries[1] && _targetPlant.transform.position.z < boundaries[0]))
             {
-                
-
                 Vector3 _correctedTransform = new Vector3(_targetPlant.transform.position.x,
                                                           _targetPlant.transform.position.y + _targetPlant.transform.localScale.y * _targetPlant.GetComponent<MeshFilter>().sharedMesh.bounds.size.y,//_targetPlant.transform.localScale.y,
                                                           _targetPlant.transform.position.z);
@@ -144,8 +142,8 @@ public class TargetPlantCounting : MonoBehaviour
             }
         }
 
-        DroneCamera.GetComponent<CustomizePerception>().ApplyViewPortAnnotation(capture);
         DroneCamera.GetComponent<PerceptionCamera>().RequestCapture();
+        DroneCamera.GetComponent<CustomAnnotation>().ApplyViewPortAnnotation(capture);
     }
 
     public void ShowDebugPositions()

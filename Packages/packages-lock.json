@@ -98,9 +98,9 @@
       "url": "https://packages.unity.com"
     },
     "com.unity.perception": {
-      "version": "0.7.0-preview.2",
+      "version": "file:D:/Projet/Unity/UnityPackages/com.unity.perception/com.unity.perception",
       "depth": 0,
-      "source": "registry",
+      "source": "local",
       "dependencies": {
         "com.unity.nuget.newtonsoft-json": "1.1.2",
         "com.unity.render-pipelines.core": "7.1.6",
@@ -109,8 +109,7 @@
         "com.unity.simulation.client": "0.0.10-preview.10",
         "com.unity.simulation.capture": "0.0.10-preview.19",
         "com.unity.simulation.core": "0.0.10-preview.22"
-      },
-      "url": "https://packages.unity.com"
+      }
     },
     "com.unity.platforms": {
       "version": "0.2.1-preview.4",

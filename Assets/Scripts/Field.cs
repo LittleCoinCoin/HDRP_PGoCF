@@ -1,6 +1,9 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Globalization;
 using UnityEngine;
+
+
 
 public class Field : MonoBehaviour
 {
@@ -10,15 +13,18 @@ public class Field : MonoBehaviour
 
     //Whether the synthetic datasets are generated for one field at one time or one field
     //at multiple times of the crop development
-    public enum FieldDevelopmentMonitoringMode { Unique, Multiple }
-    public FieldDevelopmentMonitoringMode field_dev_monitoring_mode = FieldDevelopmentMonitoringMode.Unique;
     [Min(1)] public int field_monitoring_iterations = 1;
-    private List<bool[]> field_monitoring_all_plants_status;
+
+    [Serializable]
+    public struct AllPlantStatus
+    {
+        public bool[] _allPlantStatus;
+    }
+    public List<AllPlantStatus> field_monitoring_all_plants_status;
 
     //parameters to decide which growth stage of the field time monitoring we should reach
     [Min(1)] public int target_growth_stage = 1;
     private int counter_growth_stages;
-    
 
     //Instantiation mode of the crop rows.
     public enum GenerationMode { LinearV1, LinearSeaderDrill }//, RS_Curved}
@@ -86,7 +92,6 @@ public class Field : MonoBehaviour
     public List<GameObject> all_target_plants;
     public List<Vector2> all_plants_coordinates;
     public List<int> all_plants_rows_indeces;
-
 
     //3D model of the Weed
     public GameObject weed_ref;
@@ -283,7 +288,7 @@ public class Field : MonoBehaviour
     private void GeneratePlantCoordinates_LinearV1()
     {
         all_plants_coordinates = new List<Vector2>();
-        field_monitoring_all_plants_status = new List<bool[]>();
+        field_monitoring_all_plants_status = new List<AllPlantStatus>();
 
         float x_plant = 0;
         float z_plant = 0;
@@ -329,14 +334,14 @@ public class Field : MonoBehaviour
     private void GeneratePlantCoordinates_LinearSeaderDrill()
     {
         all_plants_coordinates = new List<Vector2>();
-        field_monitoring_all_plants_status = new List<bool[]>();
+        field_monitoring_all_plants_status = new List<AllPlantStatus>();
 
         float x_plant = 0;
         float z_plant = 0;
 
         float _rad = Mathf.Deg2Rad * AveragePlusRandom(crop_rows_average_direction, crop_rows_direction_random);
         float a = Mathf.Tan(_rad);
-        float width_target = Random.Range((1 - 0.025f) * width * field_size - field_size / 2, width * field_size - field_size / 2);
+        float width_target = UnityEngine.Random.Range((1 - 0.025f) * width * field_size - field_size / 2, width * field_size - field_size / 2);
         float b = -a * width_target - field_size / 2;//the b parameter at which we should begin.
 
         int crop_rows_counter = 1;
@@ -360,8 +365,8 @@ public class Field : MonoBehaviour
                 x_plant += Mathf.Cos(_rad) * crop_plant_seader_drill_spacing;
                 z_plant += Mathf.Sin(_rad) * crop_plant_seader_drill_spacing;
 
-                float _x_plant = x_plant + Random.Range(-crop_plant_position_radius, crop_plant_position_radius);
-                float _z_plant = z_plant + Random.Range(-crop_plant_position_radius, crop_plant_position_radius);
+                float _x_plant = x_plant + UnityEngine.Random.Range(-crop_plant_position_radius, crop_plant_position_radius);
+                float _z_plant = z_plant + UnityEngine.Random.Range(-crop_plant_position_radius, crop_plant_position_radius);
                 all_plants_coordinates.Add(new Vector2(_x_plant, _z_plant));
             }
 
@@ -391,22 +396,23 @@ public class Field : MonoBehaviour
     /// </summary>
     private void ApplyProbabilityGrowthDistribution()
     {
-        bool[] _all_plants_living_status = new bool[all_plants_coordinates.Count];
+        AllPlantStatus allPlantStatus = new AllPlantStatus();
+        allPlantStatus._allPlantStatus = new bool[all_plants_coordinates.Count];
         for (int i = 0; i < all_plants_coordinates.Count; ++i)
         {
             if (counter_growth_stages > 0)
             {
-                if (field_monitoring_all_plants_status[counter_growth_stages - 1][i])//if plant is alive at the previous growth step
+                if (field_monitoring_all_plants_status[counter_growth_stages - 1]._allPlantStatus[i])//if plant is alive at the previous growth step
                 {
-                    _all_plants_living_status[i] = IsPlantAlive(all_plants_coordinates[i].x, all_plants_coordinates[i].y);
+                    allPlantStatus._allPlantStatus[i] = IsPlantAlive(all_plants_coordinates[i].x, all_plants_coordinates[i].y);
                 }
             }
             else
             {
-                _all_plants_living_status[i] = IsPlantAlive(all_plants_coordinates[i].x, all_plants_coordinates[i].y);
+                allPlantStatus._allPlantStatus[i] = IsPlantAlive(all_plants_coordinates[i].x, all_plants_coordinates[i].y);
             }
         }
-        field_monitoring_all_plants_status.Add(_all_plants_living_status);
+        field_monitoring_all_plants_status.Add(allPlantStatus);
     }
 
     /// <summary>
@@ -422,7 +428,7 @@ public class Field : MonoBehaviour
         switch (plant_growth_proba_distribution[counter_growth_stages])
         {
             case PlantGrowthProbabilityDistribution.Constant:
-                if (Random.Range(0f, 1f) < plant_growing_probability[counter_growth_stages])
+                if (UnityEngine.Random.Range(0f, 1f) < plant_growing_probability[counter_growth_stages])
                 {
                     plant_alive = true;
                 }
@@ -432,7 +438,7 @@ public class Field : MonoBehaviour
                 float x_normalized_coord = (_x + field_size / 2) / (field_size * width);
                 float z_normalized_coord = (_z + field_size / 2) / (field_size * height);
 
-                float test_value = Random.Range(0f, 1f);
+                float test_value = UnityEngine.Random.Range(0f, 1f);
 
                 plant_alive = (test_value < X_Growth_Distribution[counter_growth_stages].Evaluate(x_normalized_coord)) &&
                               (test_value < Z_Growth_Distribution[counter_growth_stages].Evaluate(z_normalized_coord));
@@ -502,7 +508,7 @@ public class Field : MonoBehaviour
 
         float _rad = Mathf.Deg2Rad * AveragePlusRandom(crop_rows_average_direction, crop_rows_direction_random);
         float a = Mathf.Tan(_rad);
-        float width_target = Random.Range((1-0.025f) * width * field_size - field_size / 2, width * field_size - field_size / 2);
+        float width_target = UnityEngine.Random.Range((1-0.025f) * width * field_size - field_size / 2, width * field_size - field_size / 2);
         float b = -a * width_target -field_size / 2;//the b parameter at which we should begin.
 
         int crop_rows_counter = 1;
@@ -575,12 +581,15 @@ public class Field : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Set active the plants GameObjects based on the _allPlantStatus array of the 
+    /// </summary>
     public void ApplyPlantStatus()
     {
         for (int i = 0; i < all_plants_coordinates.Count; i++)
         {
             all_target_plants[i].SetActive(
-                field_monitoring_all_plants_status[target_growth_stage - 1][i]);
+                field_monitoring_all_plants_status[target_growth_stage - 1]._allPlantStatus[i]);
         }
     }
 
@@ -600,7 +609,7 @@ public class Field : MonoBehaviour
         float _plant_size = AveragePlusRandom(plant_average_Yscale[target_growth_stage - 1],
                                               plant_Yscale_random[target_growth_stage - 1]);
         plant.transform.localScale = new Vector3( _plant_radius, _plant_size, _plant_radius);
-        plant.transform.Rotate(Vector3.up, Random.Range(0, 360));
+        plant.transform.Rotate(Vector3.up, UnityEngine.Random.Range(0, 360));
         plant.transform.parent = _parent_row.transform;
         
         all_target_plants.Add(plant);
@@ -622,18 +631,18 @@ public class Field : MonoBehaviour
             {
                 if (_weed_PN_NoiseMap[i, j] > _weed_growth_threshold)
                 {
-                    if (Random.Range(0f, 1f) < _weed_growing_probability)
+                    if (UnityEngine.Random.Range(0f, 1f) < _weed_growing_probability)
                     {
                         float _var_x = AveragePlusRandom(_weed_average_local_position_modifier_x, _weed_local_position_modifier_x_random);
-                        float pre_x_weed = ClampValueToMaxMin(i+Random.Range(-_var_x, _var_x),0f, _weed_PN_MapWidth);
+                        float pre_x_weed = ClampValueToMaxMin(i + UnityEngine.Random.Range(-_var_x, _var_x),0f, _weed_PN_MapWidth);
 
                         float _var_z = AveragePlusRandom(_weed_average_local_position_modifier_z, _weed_local_position_modifier_z_random);
-                        float pre_y_weed = ClampValueToMaxMin(j+ Random.Range(-_var_z, _var_z), 0f, _weed_PN_MapHeight);
+                        float pre_y_weed = ClampValueToMaxMin(j + UnityEngine.Random.Range(-_var_z, _var_z), 0f, _weed_PN_MapHeight);
 
                         x_weed = pre_x_weed / _weed_PN_MapWidth * width * field_size - field_size / 2;
                         z_weed = pre_y_weed / _weed_PN_MapHeight * height * field_size - field_size / 2;
                         GameObject _weed = Instantiate(weed_ref, new Vector3(x_weed, 0, z_weed), Quaternion.identity);
-                        _weed.transform.eulerAngles = new Vector3(-90, Random.Range(0, 360), 0);
+                        _weed.transform.eulerAngles = new Vector3(-90, UnityEngine.Random.Range(0, 360), 0);
                         float _weed_radius = AveragePlusRandom(weed_average_radius, weed_radius_random);
                         float _weed_size = AveragePlusRandom(weed_average_Yscale, weed_Yscale_random);
                         _weed.transform.localScale = new Vector3(_weed_radius, _weed_radius, _weed_size); //because of the rotation, the radius is on X and Y axis and the size on the Z axis
@@ -703,7 +712,7 @@ public class Field : MonoBehaviour
     }
 
     /// <summary>
-    /// Place the directional light representing the sun
+    /// Places the directional light representing the sun
     /// </summary>
     private void PlaceLight()
     {
@@ -883,7 +892,7 @@ public class Field : MonoBehaviour
     /// <returns></returns>
     private float AveragePlusRandom(float _average, float _random)
     {
-        return _average + Random.Range(-_random* _average, _random* _average);
+        return _average + UnityEngine.Random.Range(-_random* _average, _random* _average);
     }
 
     /// <summary>
