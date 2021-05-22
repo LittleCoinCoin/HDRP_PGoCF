@@ -1,10 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Globalization;
 using UnityEngine;
 
-
-
+/// <summary>
+/// This is the script that handles the generation and randomization of the crop fields
+/// </summary>
 public class Field : MonoBehaviour
 {
     //field size
@@ -136,18 +136,11 @@ public class Field : MonoBehaviour
     //parameters for the drone
     public GameObject drone_ref;
     private Camera drone_camera;
-    //public float drone_smoothTime = 0;
     public float drone_altitude = 30;
     public Vector2 camera_sensor_size = new Vector2 (36,24);
     public float camera_focal_length = 35;
     [Range(0, 0.99f)] public float image_capture_horizontal_overlapping = 0;
     [Range(0, 0.99f)] public float image_capture_vertical_overlapping = 0;
-    public Vector2Int image_size = new Vector2Int(1920, 1080);
-
-    //boolean to manage the rendering mode of the field: reality or labelling
-    public bool labellingMode = false;
-    public bool castShadow_labellingMode = false;
-    public bool autoUpdate_labellingMode = false;
 
     //Parameters open/close booleans
     public bool open_field_parameters = true;
@@ -155,16 +148,10 @@ public class Field : MonoBehaviour
     public bool open_weed_parameters = true;
     public bool open_CR_parameters = true;
     public bool open_sun_parameters = true;
-    public bool open_rendering_parameters = true;
     public bool open_drone_parameters = true;
 
     //Plant Parameters Growth Stages open/close boolean array
     public bool[] open_PGS_parameters = new bool[1];
-
-    private void Start()
-    {
-        //Generator();
-    }
 
     private void Update()
     {
@@ -217,7 +204,6 @@ public class Field : MonoBehaviour
 
         SpawnWeeds();
         PlaceLight();
-        Render();
         ApplyDroneParameters();
 
         ApplyPlantStatus();
@@ -238,7 +224,6 @@ public class Field : MonoBehaviour
 
         SpawnWeeds();
         PlaceLight();
-        Render();
         ApplyDroneParameters();
 
         ApplyPlantStatus();
@@ -724,31 +709,6 @@ public class Field : MonoBehaviour
     }
 
     /// <summary>
-    /// Manages how to render the crops field depending on the value of labellingMode
-    /// </summary>
-    public void Render()
-    {
-        if (labellingMode)
-        {
-            ApplyLabellingMode(instantiated_field_holder);
-
-            if (castShadow_labellingMode)
-            {
-                ApplyCastShadow(instantiated_field_holder);
-            }
-            else
-            {
-                ApplyDontCastShadow(instantiated_field_holder);
-            }
-        }
-        else
-        {
-            ApplyCastShadow(instantiated_field_holder);
-            ApplyRealityMode(instantiated_field_holder);
-        }
-    }
-
-    /// <summary>
     /// The drone parameters section includes parameters coming from other components.
     /// We need this specific method to update them all.
     /// </summary>
@@ -759,94 +719,10 @@ public class Field : MonoBehaviour
         drone_ref.GetComponent<DroneBehaviour>().field_generator_ref = this;
         drone_ref.GetComponent<DroneBehaviour>().x_overlapping = image_capture_horizontal_overlapping;
         drone_ref.GetComponent<DroneBehaviour>().y_overlapping = image_capture_vertical_overlapping;
-        //drone_ref.GetComponent<DroneBehaviour>()._smoothTime = drone_smoothTime;
 
         drone_camera = drone_ref.GetComponentInChildren<Camera>();
         drone_camera.sensorSize = camera_sensor_size;
         drone_camera.focalLength = camera_focal_length;
-
-        drone_camera.GetComponent<CaptureImage>().captureWidth = image_size.x;
-        drone_camera.GetComponent<CaptureImage>().captureHeight = image_size.y;
-    }
-
-    /// <summary>
-    /// Applies the method FromRealToLabelling to all children of <paramref name="_parent"/> which have a ChangeMaterial component attached
-    /// </summary>
-    /// <param name="_parent">The parent of the children on which we apply the labelling mode</param>
-    public void ApplyLabellingMode(GameObject _parent)
-    {
-        if (_parent != null)
-        {
-            Transform[] _T = _parent.GetComponentsInChildren<Transform>();
-            foreach (Transform _t in _T)
-            {
-                ChangeMaterial _cm = _t.gameObject.GetComponent<ChangeMaterial>();
-                if (_cm != null)
-                {
-                    _cm.FromRealToLabelling();
-                }
-            }
-        }
-    }
-
-    /// <summary>
-    /// Applies the method FromLabellingToReal to all children of <paramref name="_parent"/> which have a ChangeMaterial component attached
-    /// </summary>
-    /// <param name="_parent">The parent of the children on which we apply the reality mode</param>
-    public void ApplyRealityMode(GameObject _parent)
-    {
-        if (_parent != null)
-        {
-            Transform[] _T = _parent.GetComponentsInChildren<Transform>();
-            foreach (Transform _t in _T)
-            {
-                ChangeMaterial _cm = _t.gameObject.GetComponent<ChangeMaterial>();
-                if (_cm != null)
-                {
-                    _cm.FromLabellingToReal();
-                }
-            }
-        }
-    }
-
-    /// <summary>
-    /// Applies the method DontCastShadow to all children of <paramref name="_parent"/> which have a ChangeMaterial component attached
-    /// </summary>
-    /// <param name="_parent">The parent of the children for which we disable the shadow casting</param>
-    public void ApplyDontCastShadow(GameObject _parent)
-    {
-        if (_parent != null)
-        {
-            Transform[] _T = _parent.GetComponentsInChildren<Transform>();
-            foreach (Transform _t in _T)
-            {
-                ChangeMaterial _cm = _t.gameObject.GetComponent<ChangeMaterial>();
-                if (_cm != null)
-                {
-                    _cm.DontCastShadow();
-                }
-            }
-        }
-    }
-
-    /// <summary>
-    /// Applies the method CastShadow to all children of <paramref name="_parent"/> which have a ChangeMaterial component attached
-    /// </summary>
-    /// <param name="_parent">The parent of the children for which we disable the shadow casting</param>
-    public void ApplyCastShadow(GameObject _parent)
-    {
-        if (_parent != null)
-        {
-            Transform[] _T = _parent.GetComponentsInChildren<Transform>();
-            foreach (Transform _t in _T)
-            {
-                ChangeMaterial _cm = _t.gameObject.GetComponent<ChangeMaterial>();
-                if (_cm != null)
-                {
-                    _cm.CastShadow();
-                }
-            }
-        }
     }
 
     /// <summary>
@@ -867,20 +743,6 @@ public class Field : MonoBehaviour
     public Texture2D GenerateTextureNoiseMap(float[,] _noiseMap)
     {
         return TextureGenerator.TextureFromNoiseMap(_noiseMap);
-    }
-
-    /// <summary>
-    /// Generates a Perlin noise map and the Texture to visualize it.
-    /// </summary>
-    /// <returns></returns>
-    public Texture2D GenerateTextureNoiseMap(int MapWidth, int MapHeight, int Seed,
-        int Octaves, float NoiseScale, float Persistance, float Lacunarity, Vector2 Offset, Vector2 Offset_Random)
-    {
-        float[,] MapNoise = new float[MapWidth, MapHeight];
-
-        MapNoise = GenerateNoiseMap(MapWidth, MapHeight, Seed, Octaves, NoiseScale, Persistance, Lacunarity, Offset, Offset_Random);
-
-        return TextureGenerator.TextureFromNoiseMap(MapNoise);
     }
 
     /// <summary>

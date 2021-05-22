@@ -1,6 +1,11 @@
 ﻿using System.Collections;
 using UnityEngine;
 
+/// <summary>
+/// Handles the logic of the drone's movement, be it when it is controlled
+/// by the user during Play mode or automatically moved when capturing 
+/// images of crop fields.
+/// </summary>
 public class DroneBehaviour : MonoBehaviour
 {
 
@@ -20,12 +25,13 @@ public class DroneBehaviour : MonoBehaviour
     private Vector3 velocity = Vector3.zero;
 
     //automatic flight parameters
-    public float x_overlapping;
-    public float y_overlapping;
+    //These parameters are set through the Field Generator
+    [HideInInspector] public float x_overlapping;
+    [HideInInspector] public float y_overlapping;
 
     public TargetPlantCounting plantCounter;
-
-    public bool CaptureDone = false;
+    
+    [HideInInspector] public bool CaptureDone = false;
 
     // Start is called before the first frame update
     void Start()
@@ -95,7 +101,7 @@ public class DroneBehaviour : MonoBehaviour
     }
 
     /// <summary>
-    /// moving the drone on a grid according to the arrows of the keyboard
+    /// moving the drone on a grid on the X-Z plane according to the arrows of the keyboard
     /// </summary>
     private void GridMovementRules()
     {
@@ -121,7 +127,7 @@ public class DroneBehaviour : MonoBehaviour
     }
 
     /// <summary>
-    /// Manages the movements of the camera. The camera moves on the X-Z plane.
+    /// moving the drone continuously on the X-Z plane according to the arrows of the keyboard.
     /// </summary>
     private void Fly_Movement()
     {
@@ -182,8 +188,6 @@ public class DroneBehaviour : MonoBehaviour
         //actually do the image capture
         bool forward = true;
         int y_direction = 0;
-        gameObject.GetComponentInChildren<CaptureImage>().counter = 0;
-        gameObject.GetComponentInChildren<CaptureImage>().SetTimeFolder();
         for (int i = 0; i < _maxWidth-_minWidth; i++)
         {
             if (i > 0)
@@ -231,8 +235,6 @@ public class DroneBehaviour : MonoBehaviour
         
         bool forward = true;
         int y_direction = 0;
-        gameObject.GetComponentInChildren<CaptureImage>().counter = 0;
-        gameObject.GetComponentInChildren<CaptureImage>().SetTimeFolder();
         for (int i = 0; i <= x_steps; i++)
         {
             if (i > 0)

@@ -2,6 +2,9 @@
 using UnityEngine;
 using UnityEngine.Perception.GroundTruth;
 
+/// <summary>
+/// Handles the logic to capture complete fields or a subset of the field.
+/// </summary>
 public class MetaImageCapture : MonoBehaviour
 {
     public Field fieldGenerator_ref;

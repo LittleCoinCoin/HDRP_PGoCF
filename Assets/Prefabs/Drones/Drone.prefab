@@ -2731,7 +2731,6 @@ GameObject:
   m_Component:
   - component: {fileID: 8050278808659414335}
   - component: {fileID: 3905410442944025502}
-  - component: {fileID: 2854725487971285953}
   - component: {fileID: 7291028090495050570}
   - component: {fileID: 1972481723959628684}
   m_Layer: 0
@@ -2798,28 +2797,6 @@ Camera:
   m_OcclusionCulling: 1
   m_StereoConvergence: 10
   m_StereoSeparation: 0.022
---- !u!114 &2854725487971285953
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7122750451524903410}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 38955925bc6bf17459c9e030917b2584, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  captureWidth: 1920
-  captureHeight: 1080
-  hideGameObject: {fileID: 0}
-  optimizeForManyScreenshots: 1
-  format: 2
-  RootFolder: 
-  counter: 0
-  field_generator_ref: {fileID: 0}
-  target_plant_counter: {fileID: 0}
-  parameter_saved: 0
 --- !u!114 &7291028090495050570
 MonoBehaviour:
   m_ObjectHideFlags: 0

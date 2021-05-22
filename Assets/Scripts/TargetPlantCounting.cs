@@ -1,14 +1,15 @@
 ﻿using UnityEngine;
 using UnityEngine.Perception.GroundTruth;
-using System.Collections;
 using System.Collections.Generic;
-using System.IO;
-using System.Globalization;
 
+/// <summary>
+/// Handles the logic to annotate all images visible by the camera.
+/// This uses custom annotations compliant with UnityPerception's
+/// framework to be automatically added to the dataset labelling file.
+/// </summary>
 public class TargetPlantCounting : MonoBehaviour
 {
     public Camera DroneCamera;
-    private Plane[] camFrustrumPlanes;
     
     public Field field_generator_ref;
 
@@ -49,67 +50,8 @@ public class TargetPlantCounting : MonoBehaviour
         return counter;
     }
 
-    /// <summary>
-    /// Counts the number of plants present in the screen space and generate a csv file
-    /// with all the coordinates of the plants both in world format (x and z) and viewport (x and y)
-    /// </summary>
-    /// <param name="_path_plant_position_file">Path where to write the csv file. The name of the file should be included
-    /// in that path.</param>
-    /// <returns>An integer : the number of plants</returns>
-    public int CountTargetPlants(string _path_plant_position_file)
-    {
-        int counter = 0;
-        float[] boundaries = DroneCamera.GetComponent<CameraVision>().VisionBoundariesOnField();
-
-        FileStream plant_pos_file = new FileStream(_path_plant_position_file, FileMode.Create);
-        StreamWriter sw = new StreamWriter(plant_pos_file);
-
-        foreach (GameObject _targetPlant in field_generator_ref.all_target_plants)
-        {
-            if (_targetPlant.activeSelf &&
-                (_targetPlant.transform.position.x > boundaries[3] && _targetPlant.transform.position.x < boundaries[2]) &&
-                (_targetPlant.transform.position.z > boundaries[1] && _targetPlant.transform.position.z < boundaries[0]))
-            {
-                counter++;
-
-                //Vector2 plant_viewPort = DroneCamera.WorldToViewportPoint(_targetPlant.transform.position);
-
-                Vector3 _correctedTransform = new Vector3(_targetPlant.transform.position.x,
-                                                          _targetPlant.transform.position.y + _targetPlant.transform.localScale.y * _targetPlant.GetComponent<MeshFilter>().sharedMesh.bounds.size.y,//_targetPlant.transform.localScale.y,
-                                                          _targetPlant.transform.position.z);
-
-                Vector2 _corrected_plant_ViewPort = DroneCamera.WorldToViewportPoint(_correctedTransform);
-
-                Vector3 _NE_bounding_box = new Vector3(_targetPlant.transform.position.x + _targetPlant.transform.localScale.x * _targetPlant.GetComponent<MeshFilter>().sharedMesh.bounds.size.x,
-                                                    _targetPlant.transform.position.y + _targetPlant.transform.localScale.y * _targetPlant.GetComponent<MeshFilter>().sharedMesh.bounds.size.y,
-                                                    _targetPlant.transform.position.z + _targetPlant.transform.localScale.z * _targetPlant.GetComponent<MeshFilter>().sharedMesh.bounds.size.z);
-
-                Vector3 _SW_bounding_box = new Vector3(_targetPlant.transform.position.x - _targetPlant.transform.localScale.x * _targetPlant.GetComponent<MeshFilter>().sharedMesh.bounds.size.x,
-                                                    _targetPlant.transform.position.y + _targetPlant.transform.localScale.y * _targetPlant.GetComponent<MeshFilter>().sharedMesh.bounds.size.y,
-                                                    _targetPlant.transform.position.z - _targetPlant.transform.localScale.z * _targetPlant.GetComponent<MeshFilter>().sharedMesh.bounds.size.z);
-
-                Vector2 _onScreen_NE_Bounding_Box = DroneCamera.WorldToViewportPoint(_NE_bounding_box);
-                Vector2 _onScreen_SW_Bounding_Box = DroneCamera.WorldToViewportPoint(_SW_bounding_box);
-
-                sw.WriteLine(_targetPlant.transform.position.x.ToString("G", CultureInfo.InvariantCulture) + "," + //this is the virtual world x position
-                             _targetPlant.transform.position.z.ToString("G", CultureInfo.InvariantCulture) + "," + //this is the virtual world y position
-                             _corrected_plant_ViewPort.x.ToString("G", CultureInfo.InvariantCulture) + "," + //this is the screen x position
-                             _corrected_plant_ViewPort.y.ToString("G", CultureInfo.InvariantCulture) + "," + //this is the screen world y position
-                             (_onScreen_NE_Bounding_Box.x - _onScreen_SW_Bounding_Box.x).ToString("G", CultureInfo.InvariantCulture) + "," + //this is the plant width on the screen
-                             (_onScreen_NE_Bounding_Box.y - _onScreen_SW_Bounding_Box.y).ToString("G", CultureInfo.InvariantCulture) + "," + //this is the plant height on the screen
-                             _targetPlant.transform.eulerAngles.y.ToString("G", CultureInfo.InvariantCulture) // rotation of the plant to rotate the box accordingly.
-                             ); 
-            }
-
-        }
-
-        sw.Close();
-        return counter;
-    }
-
     public void With_Perception()
     {
-
         int counter = 0;
         float[] boundaries = DroneCamera.GetComponent<CameraVision>().VisionBoundariesOnField();
         
