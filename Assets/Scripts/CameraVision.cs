@@ -1,8 +1,13 @@
-﻿using System.Collections;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Rendering.HighDefinition;
 
+/// <summary>
+/// This scripts computes the limits of the area of the field visible by the camera.
+/// There are also debug functions drawing red decals on the outer part of the area.
+/// The debug is accessible through a button in the inspector.
+/// The camera must be perpendicular to the field.
+/// </summary>
 public class CameraVision : MonoBehaviour
 {
     public Field field_generator_ref;
@@ -21,20 +26,6 @@ public class CameraVision : MonoBehaviour
         field_generator_ref = FindObjectOfType<Field>();
     }
 
-    void Update()
-    {
-        if (Input.GetKeyDown(KeyCode.L))
-        {
-            LabellingModeManager();
-        }
-    }
-
-    private void LabellingModeManager()
-    {
-        field_generator_ref.labellingMode = !field_generator_ref.labellingMode;
-        field_generator_ref.Render();
-    }
-
     private Vector2 Compute_FOV_HeightWidth_2()
     {
         float y_sensor_m = camera_ref.sensorSize.y / 2f * 0.001f;
@@ -47,8 +38,7 @@ public class CameraVision : MonoBehaviour
         float x = z * (16f / 9f);
 
         return new Vector2(-x, -z) + new Vector2(x_sensor_m, y_sensor_m);
-        //for a reason that I cannot explain, and offset of the length half the width and height of the camera sensor is introduced later on.
-        //So, to compensate, I add them here here even though it shoud not be necessary...
+        //So, to compensate, I add them here even though it shoud not be necessary...
     }
 
     /// <summary>

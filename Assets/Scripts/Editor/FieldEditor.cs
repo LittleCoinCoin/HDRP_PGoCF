@@ -21,9 +21,6 @@ public class FieldEditor : Editor
     SerializedProperty open_sun_parameters_property;
     Texture2D sun_parameters_panel_texture;
 
-    SerializedProperty open_rendering_parameters_property;
-    Texture2D rendering_parameters_panel_texture;
-
     SerializedProperty open_drone_parameters_property;
     Texture2D drone_parameters_panel_texture;
 
@@ -69,67 +66,55 @@ public class FieldEditor : Editor
 
         EditorGUILayout.Space();
 
-        RenderingParametersManager();
-
-        EditorGUILayout.Space();
-
         TargetGrowthStageManager();
 
         serializedObject.ApplyModifiedProperties();
 
         GenerateButtonManager();
+        ShowFieldButtonManager();
 
-        EditorGUILayout.Space();
+        //EditorGUILayout.Space();
 
-        SaveParametersManager();
-
-        EditorGUILayout.Space();
-
-        ImageCaptureManager();
+        //SaveParametersManager();
 
     }
 
     private void FieldParametersManager()
     {
+        open_field_parameters_property.boolValue = EditorGUILayout.Foldout(
+            open_field_parameters_property.boolValue, "Field parameters", true, EditorStyles.foldoutHeader);
+
         EditorGUILayout.BeginVertical("Box");
-        EditorGUILayout.BeginHorizontal();
-        if (GUILayout.Button(field_parameters_panel_texture, popupStyle, GUILayout.Width(20), GUILayout.Height(15)))
-        {
-            open_field_parameters_property.boolValue = !open_field_parameters_property.boolValue;
-        }
-        EditorGUILayout.LabelField("Field parameters", EditorStyles.boldLabel);
-        //GUILayout.Toggle(open_field_parameters, "show");
-        EditorGUILayout.EndHorizontal();
         
         if (EditorGUILayout.BeginFadeGroup(Bool2Float(open_field_parameters_property.boolValue)))
         {
             using (new EditorGUI.IndentLevelScope())
             {
                 EditorGUILayout.PropertyField(serializedObject.FindProperty("field_ref"),
-                    new GUIContent("Field 3D object", "The surface representing the ground."));
+                    new GUIContent("Field 3D object", "The game object representing the ground."));
 
                 EditorGUILayout.PropertyField(serializedObject.FindProperty("field_holder"),
                     new GUIContent("Container",
                     "An empty game object witht the tag \"Field_Holder\" to contain all the elements instantiated during the generation of the whole crop field."));
 
                 EditorGUILayout.PropertyField(serializedObject.FindProperty("height"),
-                    new GUIContent("Height", "The number of \"Field 3D object\" instantiated on the Z axis."));
+                    new GUIContent("Height", "The multiplier applied to the scale on the z axis of \"Field 3D object\""));
 
                 EditorGUILayout.PropertyField(serializedObject.FindProperty("width"),
-                    new GUIContent("Width", "The number of \"Field 3D object\" instantiated on the X axis."));
+                    new GUIContent("Width", "The multiplier applied to the scale on the x axis of \"Field 3D object\""));
 
                 EditorGUILayout.PropertyField(serializedObject.FindProperty("field_texture_average_granularity"),
                     new GUIContent("Average texture grain", "The average tiling divider of the texture of the field."));
                 using (new EditorGUI.IndentLevelScope())
                 {
                     EditorGUILayout.PropertyField(serializedObject.FindProperty("field_texture_granularity_random"),
-                        new GUIContent("Variability", "Introduces variability in the tiling divider of the texture of the field."));
-
+                        new GUIContent("Variability", "Introduces variability in the tiling divider of the texture of the field." +
+                                                        "The variability is a percentage of the average."));
                 }
                 
                 EditorGUILayout.PropertyField(serializedObject.FindProperty("field_monitoring_iterations"), 
                     new GUIContent("Monitoring iterations", "Number of times we simulate the drone capturing images of the " +
-                    "field. Everytime the positions of the plants are that of the initial spawning but the 3D models " +
+                    "field. Every time the positions of the plants are that of Growth Stage 1 but the 3D models " +
                     "change according to the Growth Stages parameters in the \"Plant parameters\" section."));
             }
         }
@@ -140,26 +125,16 @@ public class FieldEditor : Editor
 
     private void PlantParametersManager()
     {
+        open_plant_parameters_property.boolValue = EditorGUILayout.Foldout(
+            open_plant_parameters_property.boolValue, "Plant parameters", true, EditorStyles.foldoutHeader);
+
         EditorGUILayout.BeginVertical("Box");
-        EditorGUILayout.BeginHorizontal();
-        if (GUILayout.Button(plant_parameters_panel_texture, popupStyle, GUILayout.Width(20), GUILayout.Height(15)))
-        {
-            open_plant_parameters_property.boolValue = !open_plant_parameters_property.boolValue;
-        }
-        EditorGUILayout.LabelField("Plant parameters", EditorStyles.boldLabel);
-        //GUILayout.Toggle(open_field_parameters, "show");
-        EditorGUILayout.EndHorizontal();
         if (EditorGUILayout.BeginFadeGroup(Bool2Float(open_plant_parameters_property.boolValue)))
         {
             using (new EditorGUI.IndentLevelScope())
             {
                 //Updating array sizes
-                if (serializedObject.FindProperty("diff_growth_stages_plant_refs").arraySize !=
-                            serializedObject.FindProperty("field_monitoring_iterations").intValue)
-                {
-                    
 
-                }
                 //Plants Game Objects array
                 serializedObject.FindProperty("diff_growth_stages_plant_refs").arraySize =
                 serializedObject.FindProperty("field_monitoring_iterations").intValue;
@@ -181,7 +156,7 @@ public class FieldEditor : Editor
                 serializedObject.FindProperty("plant_radius_random").arraySize =
                 serializedObject.FindProperty("field_monitoring_iterations").intValue;
 
-                //Plants 3D models growth distribution modes arrays
+                //Plants 3D models "growth distribution modes" arrays
                 serializedObject.FindProperty("plant_growth_proba_distribution").arraySize =
                 serializedObject.FindProperty("field_monitoring_iterations").intValue;
 
@@ -205,13 +180,8 @@ public class FieldEditor : Editor
                 {
                     using (new EditorGUI.IndentLevelScope())
                     {
-                        EditorGUILayout.BeginHorizontal();
-                        if (GUILayout.Button(open_PGS_parameters_textures[i], popupStyle, GUILayout.Width(15), GUILayout.Height(15)))
-                        {
-                            open_PGS_parameters_property.GetArrayElementAtIndex(i).boolValue = !open_PGS_parameters_property.GetArrayElementAtIndex(i).boolValue;
-                        }
-                        EditorGUILayout.LabelField($"Growth Stage {i + 1}", EditorStyles.boldLabel);
-                        EditorGUILayout.EndHorizontal();
+                        open_PGS_parameters_property.GetArrayElementAtIndex(i).boolValue = EditorGUILayout.Foldout(
+                            open_PGS_parameters_property.GetArrayElementAtIndex(i).boolValue, $"Growth Stage {i + 1}", true, EditorStyles.foldoutHeader);
 
                         if (EditorGUILayout.BeginFadeGroup(Bool2Float(open_PGS_parameters_property.GetArrayElementAtIndex(i).boolValue)))
                         {
@@ -223,7 +193,8 @@ public class FieldEditor : Editor
                             using (new EditorGUI.IndentLevelScope())
                             {
                                 EditorGUILayout.PropertyField(serializedObject.FindProperty("plant_Yscale_random").GetArrayElementAtIndex(i),
-                                    new GUIContent("Variability", "Introduces variability among plants in regards to their scale on the Y axis."));
+                                    new GUIContent("Variability", "Introduces variability on the average size of the plants." +
+                                                                    "The variability is a percentage of the average."));
                             }
 
                             EditorGUILayout.PropertyField(serializedObject.FindProperty("plant_average_radius").GetArrayElementAtIndex(i),
@@ -231,7 +202,8 @@ public class FieldEditor : Editor
                             using (new EditorGUI.IndentLevelScope())
                             {
                                 EditorGUILayout.PropertyField(serializedObject.FindProperty("plant_radius_random").GetArrayElementAtIndex(i),
-                                    new GUIContent("Variability", "Introduces variability among plants in regards to their scale on the X and Z axis."));
+                                    new GUIContent("Variability", "Introduces variability on the average radius of the plants." +
+                                                                    "The variability is a percentage of the average."));
                             }
 
                             EditorGUILayout.PropertyField(serializedObject.FindProperty("plant_growth_proba_distribution").GetArrayElementAtIndex(i),
@@ -241,7 +213,8 @@ public class FieldEditor : Editor
                             {
                                 case (0):
                                     EditorGUILayout.PropertyField(serializedObject.FindProperty("plant_growing_probability").GetArrayElementAtIndex(i),
-                                        new GUIContent("Growth probability", "Probability that the plant is indeed instantiated on the surface of the field. It simulates whether the seed planted at the begining germinated."));
+                                        new GUIContent("Growth probability", "Probability that the plant is indeed instantiated on the surface of the field." +
+                                                                            "It simulates whether the seed planted at the begining germinated."));
                                     break;
 
                                 case (1):
@@ -264,11 +237,11 @@ public class FieldEditor : Editor
                     case (0):
                         EditorGUILayout.LabelField("Crop Rows Generation Mode: LinearV1");
                         EditorGUILayout.PropertyField(serializedObject.FindProperty("crop_plants_average_spacing"),
-                        new GUIContent("Average spacing", "Simulates the general space between plants in the same crops rows."));
+                        new GUIContent("Average spacing", "Simulates the average space between consecutive plants in the same crop row."));
                         using (new EditorGUI.IndentLevelScope())
                         {
                             EditorGUILayout.PropertyField(serializedObject.FindProperty("crop_plants_spacing_random"), new GUIContent("Variability",
-                            "Introduces variability in the space between plants in the same crops row. This variability is introduced between two consecutive plants."));
+                            "Introduces variability on the average spacing. The variability is a percentage of the average."));
 
                         }
                         break;
@@ -276,9 +249,9 @@ public class FieldEditor : Editor
                     case (1):
                         EditorGUILayout.LabelField("Crop Rows Generation Mode: Linear Seader Drill");
                         EditorGUILayout.PropertyField(serializedObject.FindProperty("crop_plant_seader_drill_spacing"),
-                        new GUIContent("Spacing", "Simulates the mean space between plants in the same crop row of the seader drill."));
+                        new GUIContent("Spacing", "Simulates the average space between plants in the same crop row of the seader drill."));
                         EditorGUILayout.PropertyField(serializedObject.FindProperty("crop_plant_position_radius"),
-                        new GUIContent("Position radius", "Simulates the radius of the circle in which the plant will grow somewhere."));
+                        new GUIContent("Position radius", "Simulates the radius of the circle in which the seed has fallen."));
                         break;
                 }
             }
@@ -289,15 +262,10 @@ public class FieldEditor : Editor
 
     private void WeedParametersManager()
     {
+        open_weed_parameters_property.boolValue = EditorGUILayout.Foldout(
+            open_weed_parameters_property.boolValue, "Weed parameters", true, EditorStyles.foldoutHeader);
+
         EditorGUILayout.BeginVertical("Box");
-        EditorGUILayout.BeginHorizontal();
-        if (GUILayout.Button(weed_parameters_panel_texture, popupStyle, GUILayout.Width(20), GUILayout.Height(15)))
-        {
-            open_weed_parameters_property.boolValue = !open_weed_parameters_property.boolValue;
-        }
-        EditorGUILayout.LabelField("Weed parameters", EditorStyles.boldLabel);
-        //GUILayout.Toggle(open_field_parameters, "show");
-        EditorGUILayout.EndHorizontal();
         if (EditorGUILayout.BeginFadeGroup(Bool2Float(open_weed_parameters_property.boolValue)))
         {
             using (new EditorGUI.IndentLevelScope())
@@ -314,8 +282,7 @@ public class FieldEditor : Editor
                 using (new EditorGUI.IndentLevelScope())
                 {
                     EditorGUILayout.PropertyField(serializedObject.FindProperty("weed_Yscale_random"), new GUIContent("Variability",
-                    "Introduces variability among weeds in regards to their scale on the Y axis."));
-
+                    "Introduces variability on the average size. The variability is a percentage of the average."));
                 }
 
                 EditorGUILayout.PropertyField(serializedObject.FindProperty("weed_average_radius"),
@@ -323,12 +290,24 @@ public class FieldEditor : Editor
                 using (new EditorGUI.IndentLevelScope())
                 {
                     EditorGUILayout.PropertyField(serializedObject.FindProperty("weed_radius_random"), new GUIContent("Variability",
-                    "Introduces variability among weeds in regards to their scale on the X and Z axis."));
-
+                    "Introduces variabilityon the average radius. The variability is a percentage of the average."));
                 }
 
-                EditorGUILayout.PropertyField(serializedObject.FindProperty("_weed_local_random"),
-                    new GUIContent("Position Variability", "Modifies the position of \"Weed 3D object\" on the X and Z axis after Perlin Noise instanciation."));
+                EditorGUILayout.PropertyField(serializedObject.FindProperty("_weed_average_local_position_modifier_x"),
+                    new GUIContent("Average X Offset", "Modifies the position of \"Weed 3D object\" on the X axis after the Perlin Noise."));
+                using (new EditorGUI.IndentLevelScope())
+                {
+                    EditorGUILayout.PropertyField(serializedObject.FindProperty("_weed_local_position_modifier_x_random"),
+                    new GUIContent("Variability", "Introduces variability on the average X offset. The variability is a percentage of the average."));
+                }
+
+                EditorGUILayout.PropertyField(serializedObject.FindProperty("_weed_average_local_position_modifier_z"),
+                    new GUIContent("Average Z Offset", "Modifies the position of \"Weed 3D object\" on the Z axis after the Perlin Noise."));
+                using (new EditorGUI.IndentLevelScope())
+                {
+                    EditorGUILayout.PropertyField(serializedObject.FindProperty("_weed_local_position_modifier_z_random"),
+                    new GUIContent("Variability", "Introduces variability on the average Y offset. The variability is a percentage of the average."));
+                }
 
                 EditorGUILayout.Space();
 
@@ -337,11 +316,11 @@ public class FieldEditor : Editor
                 EditorGUILayout.LabelField("Perlin noise parameters", EditorStyles.boldLabel);
 
                 EditorGUILayout.PropertyField(serializedObject.FindProperty("_weed_PN_MapHeight"),
-                    new GUIContent("Map Height", "The height of the texture on which we are going to map the Perlin Noise." +
+                    new GUIContent("Map Height", "The height of the texture on which the Perlin Noise is mapped." +
                     "It does not have to be equal to the field height; in actual fact, it is recommanded to be way greater."));
 
                 EditorGUILayout.PropertyField(serializedObject.FindProperty("_weed_PN_MapWidth"),
-                    new GUIContent("Map Width", "The width of the texture on which we are going to map the Perlin Noise." +
+                    new GUIContent("Map Width", "The width of the texture on which the Perlin Noise is mapped." +
                     "It does not have to be equal to the field width; in actual fact, it is recommanded to be way greater."));
 
                 EditorGUILayout.PropertyField(serializedObject.FindProperty("_weed_PN_Seed"),
@@ -364,7 +343,7 @@ public class FieldEditor : Editor
                 using (new EditorGUI.IndentLevelScope())
                 {
                     EditorGUILayout.PropertyField(serializedObject.FindProperty("_weed_PN_Offset_random"), new GUIContent("Variability",
-                    "Introduces variability on the offset of the Perlin Noise."));
+                    "Introduces variability on the offset of the Perlin Noise. The variability is a percentage of the average."));
                 }
 
                 EditorGUILayout.PropertyField(serializedObject.FindProperty("_weed_growth_threshold"),
@@ -372,10 +351,6 @@ public class FieldEditor : Editor
 
                 SerializedProperty _weedPN_EnablePreviewProperty = serializedObject.FindProperty("_weed_PN_enablePreview");
                 EditorGUILayout.PropertyField(_weedPN_EnablePreviewProperty, new GUIContent("Enable preview", "Displays the preview of the Perlin Noise distribution"));
-
-
-                //EditorGUILayout.PropertyField(serializedObject.FindProperty("_weed_PN_Texture"),
-                //    new GUIContent("Distribution preview", "Preview of the perlin noise projected as a texture"));
 
                 if (EditorGUILayout.BeginFadeGroup(Bool2Float(_weedPN_EnablePreviewProperty.boolValue)))
                 {
@@ -388,13 +363,13 @@ public class FieldEditor : Editor
                         if (_weedPN_AutoUpdateProperty.boolValue)
                         {
                             serializedObject.ApplyModifiedProperties();//mandatory
-                            field_ref.Preview_WeedPerlinNoise();
+                            field_ref.Preview_WeedPerlinNoise(true);
                         }
                     }
 
                     if (GUILayout.Button("Preview"))
                     {
-                        field_ref.Preview_WeedPerlinNoise();
+                        field_ref.Preview_WeedPerlinNoise(true);
                     }
                     GUILayout.EndHorizontal();
 
@@ -415,47 +390,53 @@ public class FieldEditor : Editor
 
     private void CropRowsParametersManager()
     {
+        open_CR_parameters_property.boolValue = EditorGUILayout.Foldout(
+            open_CR_parameters_property.boolValue, "Crops Rows parameters", true, EditorStyles.foldoutHeader);
+
         EditorGUILayout.BeginVertical("Box");
-        EditorGUILayout.BeginHorizontal();
-        if (GUILayout.Button(CR_parameters_panel_texture, popupStyle, GUILayout.Width(20), GUILayout.Height(15)))
-        {
-            open_CR_parameters_property.boolValue = !open_CR_parameters_property.boolValue;
-        }
-        EditorGUILayout.LabelField("Crops Rows parameters", EditorStyles.boldLabel);
-        //GUILayout.Toggle(open_field_parameters, "show");
-        EditorGUILayout.EndHorizontal();
         if (EditorGUILayout.BeginFadeGroup(Bool2Float(open_CR_parameters_property.boolValue)))
         {
             using (new EditorGUI.IndentLevelScope())
             {
                 EditorGUILayout.PropertyField(serializedObject.FindProperty("plant_row_holder"), new GUIContent("Container",
-                    "An empty game object witht the tag \"Plant_Row_Holder\" to contain all the plants instantiated during the generation of the crops row."));
+                    "An empty game object witht the tag \"Plant_Row_Holder\" to contain all the plants instantiated during the" +
+                    "generation of the crops row."));
 
                 EditorGUILayout.PropertyField(serializedObject.FindProperty("crops_rows_GenMode"),
                 new GUIContent("Crop Rows Generation", "Selects which method to use to generate the crop rows of the field."));
 
-
-                EditorGUILayout.PropertyField(serializedObject.FindProperty("crop_rows_average_direction"), new GUIContent("Average angle",
-                    "Simulates the general orientation of the crops rows of the field"));
-                using (new EditorGUI.IndentLevelScope())
-                {
-                    EditorGUILayout.PropertyField(serializedObject.FindProperty("crop_rows_direction_random"), new GUIContent("Variability",
-                    "Introduces variability in the direction of the row. This variability is introduced between two consecutive plants of an identical row."));
-                }
-
                 if (serializedObject.FindProperty("crops_rows_GenMode").enumValueIndex == 0)
                 {
+                    EditorGUILayout.PropertyField(serializedObject.FindProperty("crop_rows_average_direction"), new GUIContent("Average angle",
+                    "Simulates the average direction of the crops rows of the field."));
+                    using (new EditorGUI.IndentLevelScope())
+                    {
+                        EditorGUILayout.PropertyField(serializedObject.FindProperty("crop_rows_direction_random"), new GUIContent("Variability",
+                        "Introduces variability on the average angle. This variability is introduced between two consecutive crops" +
+                        "rows. The variability is a percentage of the average."));
+                    }
+
                     EditorGUILayout.PropertyField(serializedObject.FindProperty("crop_rows_average_spacing"), new GUIContent("Average spacing",
-                    "Simulates the general space between crops rows."));
+                    "Simulates the average space between crops rows."));
                     using (new EditorGUI.IndentLevelScope())
                     {
                         EditorGUILayout.PropertyField(serializedObject.FindProperty("crop_rows_spacing_random"), new GUIContent("Variability",
-                        "Introduces variability in the space between crops rows. This variability is introduced between two consecutive crops rows."));
+                        "Introduces variability in the space between crops rows. This variability is introduced between two consecutive crops" +
+                        "rows. The variability is a percentage of the average."));
 
                     }
                 }
                 else
                 {
+                    EditorGUILayout.PropertyField(serializedObject.FindProperty("crop_rows_average_direction"), new GUIContent("Average angle",
+                    "Simulates the average direction of the seader building the crops rows of the field."));
+                    using (new EditorGUI.IndentLevelScope())
+                    {
+                        EditorGUILayout.PropertyField(serializedObject.FindProperty("crop_rows_direction_random"), new GUIContent("Variability",
+                        "Introduces variability on the average angle.  This variability is introduced between two consecutive passes." +
+                        "The variability is a percentage of the average."));
+                    }
+
                     EditorGUILayout.PropertyField(serializedObject.FindProperty("crop_rows_on_seeder_drill"),
                     new GUIContent("Seeder Drill Width", "Gives the number of crop rows the seeder can plant."));
 
@@ -463,11 +444,12 @@ public class FieldEditor : Editor
                         new GUIContent("Seader spacing", "Simulates the space between two consecutive crop rows planted by the seader drill."));
 
                     EditorGUILayout.PropertyField(serializedObject.FindProperty("crop_rows_average_spacing_between_seader_passes"),
-                        new GUIContent("Seader passes average spacing", "Simulates the mean space between two consecutive pass of the seader."));
+                        new GUIContent("Seader passes average spacing", "Simulates the average space between two consecutive pass of the seader."));
                     using (new EditorGUI.IndentLevelScope())
                     {
                         EditorGUILayout.PropertyField(serializedObject.FindProperty("crop_rows_spacing_between_seader_passes_random"),
-                            new GUIContent("Variability", "Introduces variability in the space between two consecutive seader passes."));
+                            new GUIContent("Variability", "Introduces variability on the seader passes average spacing. The variability" +
+                            "is a percentage of the average."));
                     }
                 }
             }
@@ -478,15 +460,10 @@ public class FieldEditor : Editor
 
     private void SunParametersManager()
     {
+        open_sun_parameters_property.boolValue = EditorGUILayout.Foldout(
+            open_sun_parameters_property.boolValue, "Sun parameters", true, EditorStyles.foldoutHeader);
+
         EditorGUILayout.BeginVertical("Box");
-        EditorGUILayout.BeginHorizontal();
-        if (GUILayout.Button(sun_parameters_panel_texture, popupStyle, GUILayout.Width(20), GUILayout.Height(15)))
-        {
-            open_sun_parameters_property.boolValue = !open_sun_parameters_property.boolValue;
-        }
-        EditorGUILayout.LabelField("Sun parameters", EditorStyles.boldLabel);
-        //GUILayout.Toggle(open_field_parameters, "show");
-        EditorGUILayout.EndHorizontal();
 
         if (EditorGUILayout.BeginFadeGroup(Bool2Float(open_sun_parameters_property.boolValue)))
         {
@@ -499,7 +476,8 @@ public class FieldEditor : Editor
                     " a value betwwen 90 and 180 degrees simulates a sun in the South Hemisphere"));
                 using (new EditorGUI.IndentLevelScope())
                 {
-                    EditorGUILayout.PropertyField(serializedObject.FindProperty("sun_elevation_random"), new GUIContent("Variability", "Introduces variability on the sun elevation."));
+                    EditorGUILayout.PropertyField(serializedObject.FindProperty("sun_elevation_random"), new GUIContent("Variability",
+                        "Introduces variability on the average elevation. The variability is a percentage of the average."));
 
                 }
 
@@ -509,7 +487,7 @@ public class FieldEditor : Editor
                 using (new EditorGUI.IndentLevelScope())
                 {
                     EditorGUILayout.PropertyField(serializedObject.FindProperty("sun_azimuth_random"), new GUIContent("Variability",
-                    "Introduces variability on the sun azimuth."));
+                    "Introduces variability on the average azimuth. The variability is a percentage of the average."));
                 }
             }
         }
@@ -519,15 +497,10 @@ public class FieldEditor : Editor
 
     private void DroneParametersManager()
     {
+        open_drone_parameters_property.boolValue = EditorGUILayout.Foldout(
+            open_drone_parameters_property.boolValue, "Drone parameters", true, EditorStyles.foldoutHeader);
+
         EditorGUILayout.BeginVertical("Box");
-        EditorGUILayout.BeginHorizontal();
-        if (GUILayout.Button(drone_parameters_panel_texture, popupStyle, GUILayout.Width(20), GUILayout.Height(15)))
-        {
-            open_drone_parameters_property.boolValue = !open_drone_parameters_property.boolValue;
-        }
-        EditorGUILayout.LabelField("Drone parameters", EditorStyles.boldLabel);
-        //GUILayout.Toggle(open_field_parameters, "show");
-        EditorGUILayout.EndHorizontal();
 
         if (EditorGUILayout.BeginFadeGroup(Bool2Float(open_drone_parameters_property.boolValue)))
         {
@@ -562,21 +535,7 @@ public class FieldEditor : Editor
                 EditorGUILayout.PropertyField(serializedObject.FindProperty("image_capture_vertical_overlapping"),
                                     new GUIContent("Z overlapping", "The overlapping happening between two images captured next to each others vertically (drone moving forward or backward)."));
 
-                EditorGUILayout.PropertyField(serializedObject.FindProperty("image_size"),
-                                    new GUIContent("Image Size", "The size of the image captured."));
-
             }
-
-            //SerializedProperty drone_AutoUpdateProperty = serializedObject.FindProperty("autoUdate_droneParameters");
-            //EditorGUILayout.PropertyField(drone_AutoUpdateProperty, new GUIContent("Auto update", "Apply the changes everytimes a parameter of this section is modified"));
-
-            //if (EditorGUI.EndChangeCheck())
-            //{
-            //    if (drone_AutoUpdateProperty.boolValue)
-            //    {
-            //        field_ref.ApplyDroneParameters();
-            //    }
-            //}
 
             if (GUILayout.Button("Apply"))
             {
@@ -588,50 +547,6 @@ public class FieldEditor : Editor
                 field_ref.drone_ref.GetComponent<DroneBehaviour>().StartPosition();
             }
 
-        }
-        EditorGUILayout.EndFadeGroup();
-        EditorGUILayout.EndVertical();
-    }
-
-    private void RenderingParametersManager()
-    {
-        EditorGUILayout.BeginVertical("Box");
-        EditorGUILayout.BeginHorizontal();
-        if (GUILayout.Button(rendering_parameters_panel_texture, popupStyle, GUILayout.Width(20), GUILayout.Height(15)))
-        {
-            open_rendering_parameters_property.boolValue = !open_rendering_parameters_property.boolValue;
-        }
-        EditorGUILayout.LabelField("Labelling rendering parameters", EditorStyles.boldLabel);
-        //GUILayout.Toggle(open_field_parameters, "show");
-        EditorGUILayout.EndHorizontal();
-        if (EditorGUILayout.BeginFadeGroup(Bool2Float(open_rendering_parameters_property.boolValue)))
-        {
-            EditorGUI.BeginChangeCheck();
-            using (new EditorGUI.IndentLevelScope())
-            {
-                EditorGUILayout.PropertyField(serializedObject.FindProperty("labellingMode"), new GUIContent("Activate Labelling", "Switches the rendering of the crops field to use the labelling materials."));
-                EditorGUILayout.PropertyField(serializedObject.FindProperty("castShadow_labellingMode"), new GUIContent("Cast Shadows", "Manages whether the objects related to the labelling mode will cast shadows."));
-
-            }
-
-            GUILayout.BeginHorizontal();
-            SerializedProperty rendering_AutoUpdateProperty = serializedObject.FindProperty("autoUpdate_labellingMode");
-            EditorGUILayout.PropertyField(rendering_AutoUpdateProperty, new GUIContent("Auto update", "Apply the changes everytimes a parameter of this section is modified"));
-
-            if (EditorGUI.EndChangeCheck())
-            {
-                if (rendering_AutoUpdateProperty.boolValue)
-                {
-                    serializedObject.ApplyModifiedProperties();//mandatory
-                    field_ref.Render();
-                }
-            }
-
-            if (GUILayout.Button("Render"))
-            {
-                field_ref.Render();
-            }
-            GUILayout.EndHorizontal();
         }
         EditorGUILayout.EndFadeGroup();
         EditorGUILayout.EndVertical();
@@ -657,6 +572,14 @@ public class FieldEditor : Editor
         }
     }
 
+    private void ShowFieldButtonManager()
+    {
+        if (GUILayout.Button("Show Field"))
+        {
+            field_ref.ShowFieldAtTargetMonitoringStage();
+        }
+    }
+
     private void SaveParametersManager()
     {
         if (GUILayout.Button("Save Parameters"))
@@ -666,17 +589,9 @@ public class FieldEditor : Editor
         }
     }
 
-    private void ImageCaptureManager()
-    {
-        if (GUILayout.Button("Capture All images"))
-        {
-            field_ref.drone_ref.GetComponent<DroneBehaviour>().AllImageCapture();
-        }
-    }
-
     private float Bool2Float(bool _b)
     {
-        return _b? 1 : 0;
+        return _b? 1f : 0f;
     }
 
     private void CatchProperties()
@@ -686,7 +601,6 @@ public class FieldEditor : Editor
         open_weed_parameters_property = serializedObject.FindProperty("open_weed_parameters");
         open_CR_parameters_property = serializedObject.FindProperty("open_CR_parameters");
         open_sun_parameters_property = serializedObject.FindProperty("open_sun_parameters");
-        open_rendering_parameters_property = serializedObject.FindProperty("open_rendering_parameters");
         open_drone_parameters_property = serializedObject.FindProperty("open_drone_parameters");
 
         open_PGS_parameters_property = serializedObject.FindProperty("open_PGS_parameters");
@@ -715,11 +629,7 @@ public class FieldEditor : Editor
 
         sun_parameters_panel_texture = UpdateParametersPanelTexture(open_sun_parameters_property, sun_parameters_panel_texture);
 
-        rendering_parameters_panel_texture = UpdateParametersPanelTexture(open_rendering_parameters_property, rendering_parameters_panel_texture);
-
         drone_parameters_panel_texture = UpdateParametersPanelTexture(open_drone_parameters_property, drone_parameters_panel_texture);
-
-        
 
     }
 

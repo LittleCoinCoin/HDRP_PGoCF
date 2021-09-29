@@ -1,6 +1,4 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEditor;
 
 [CustomEditor(typeof(MetaImageCapture))]
@@ -41,55 +39,20 @@ public class MetaImageCaptureEditor : Editor
             new GUIContent("Min Height", "Subset's minimum bound of the height of the grid on which we capture images."));
         EditorGUILayout.PropertyField(maxHeightGridSubset_property,
             new GUIContent("Max Height", "Subset's maximum bound of the height of the grid on which we capture images."));
-
-        if (GUILayout.Button("Capture Subset Images of All Fields"))
-        {
-            _metaImageCapture_ref.capturingCamera_ref.GetComponent<CaptureImage>().RootFolder =
-                _metaImageCapture_ref.rootFolder + "/" + _metaImageCapture_ref.metaCapture_FolderName;
-            CaptureSubsetImages_AllFields();
-        }
         
         EditorGUILayout.EndToggleGroup();
 
         EditorGUILayout.Space();
 
         EditorGUI.BeginDisabledGroup(GridSubsetCapture_property.boolValue);
-        if (GUILayout.Button("Capture All Images of All Fields"))
-        {
-            _metaImageCapture_ref.capturingCamera_ref.GetComponent<CaptureImage>().RootFolder =
-                _metaImageCapture_ref.rootFolder + "/" + _metaImageCapture_ref.metaCapture_FolderName;
-            CaptureAllImages_AllFields();
-            }
+
         EditorGUI.EndDisabledGroup();
-    }
-
-    private void CaptureSubsetImages_AllFields()
-    {
-        for (int i = 0; i < _metaImageCapture_ref.numberOfFields; i++)
-        {
-            _metaImageCapture_ref.fieldGenerator_ref.Generator();
-            _metaImageCapture_ref.fieldGenerator_ref.drone_ref.GetComponent<DroneBehaviour>().CaptureGridSubset(
-                minWidthGridSubset_property.intValue, maxWidthGridSubset_property.intValue,
-                minHeightGridSubset_property.intValue, maxHeightGridSubset_property.intValue);
-        }
-    }
-
-    private void CaptureAllImages_AllFields()
-    {
-        for (int i = 0; i < _metaImageCapture_ref.numberOfFields; i++)
-        {
-            _metaImageCapture_ref.fieldGenerator_ref.Generator();
-            _metaImageCapture_ref.fieldGenerator_ref.drone_ref.GetComponent<DroneBehaviour>().AllImageCapture();
-        }
     }
 
     private void DrawBase()
     {
         EditorGUILayout.PropertyField(serializedObject.FindProperty("fieldGenerator_ref"));
         EditorGUILayout.PropertyField(serializedObject.FindProperty("capturingCamera_ref"));
-        EditorGUILayout.PropertyField(serializedObject.FindProperty("rootFolder"));
-        EditorGUILayout.PropertyField(serializedObject.FindProperty("metaCapture_FolderName"));
-        EditorGUILayout.PropertyField(serializedObject.FindProperty("numberOfFields"));
     }
 
     private void CatchProperties()

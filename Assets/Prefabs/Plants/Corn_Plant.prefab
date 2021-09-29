@@ -12,7 +12,6 @@ GameObject:
   - component: {fileID: 4041256864661135806}
   - component: {fileID: 4321512320492552705}
   - component: {fileID: 3496327222634988842}
-  - component: {fileID: -6143160777973564051}
   m_Layer: 0
   m_Name: Corn_Plant
   m_TagString: Target_Plant
@@ -91,21 +90,7 @@ MeshCollider:
   m_Material: {fileID: 0}
   m_IsTrigger: 0
   m_Enabled: 1
-  serializedVersion: 3
+  serializedVersion: 4
   m_Convex: 0
   m_CookingOptions: 30
   m_Mesh: {fileID: 4300012, guid: b69b26c8b73b8bd49bf243bbe541a2e0, type: 3}
---- !u!114 &-6143160777973564051
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5325360664519029482}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 23dde06ea097d8a45919d1240b181a28, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  realityMaterial: {fileID: 2100000, guid: a46349869de82824ba02d48aa61e68f7, type: 2}
-  labellingMaterial: {fileID: 2100000, guid: e6f4cbfcd17d15d499d361344edcb434, type: 2}

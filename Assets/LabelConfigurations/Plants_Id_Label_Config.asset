@@ -1,0 +1,35 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2f09f279848e42cea259348b13bce4c5, type: 3}
+  m_Name: Plants_Id_Label_Config
+  m_EditorClassIdentifier: 
+  m_LabelEntries:
+  - label: Plant_A2
+    id: 1
+  - label: Plant_B1
+    id: 2
+  - label: Plant_B3B4
+    id: 3
+  - label: Plant_D1
+    id: 4
+  - label: Plant_D2
+    id: 5
+  - label: Plant_D3
+    id: 6
+  - label: Plant_E1
+    id: 7
+  - label: Plant_F3
+    id: 8
+  - label: Weed
+    id: 9
+  autoAssignIds: 1
+  startingLabelId: 1

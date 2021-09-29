@@ -9,6 +9,7 @@ TagManager:
   - Target_Plant
   - Weed
   - GIFCAM
+  - MovieCamera
   layers:
   - Default
   - TransparentFX

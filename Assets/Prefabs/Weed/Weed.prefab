@@ -11,7 +11,7 @@ GameObject:
   - component: {fileID: 8345614048681524701}
   - component: {fileID: 1047814230421850091}
   - component: {fileID: 6752615576368003858}
-  - component: {fileID: -8954509554641215262}
+  - component: {fileID: 7155409663676338814}
   m_Layer: 0
   m_Name: Weed
   m_TagString: Weed
@@ -80,7 +80,7 @@ MeshRenderer:
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 0
---- !u!114 &-8954509554641215262
+--- !u!114 &7155409663676338814
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -89,8 +89,10 @@ MonoBehaviour:
   m_GameObject: {fileID: 5011039749691740110}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 23dde06ea097d8a45919d1240b181a28, type: 3}
+  m_Script: {fileID: 11500000, guid: 8b33f0bc2b78db642a758f07826d0dd0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  realityMaterial: {fileID: 2100000, guid: 2b4bf3b9f4cc9164e836b36906eef57c, type: 2}
-  labellingMaterial: {fileID: 2100000, guid: 4cf9121b1c8db22479a528f71b924811, type: 2}
+  labels:
+  - Weed
+  useAutoLabeling: 0
+  autoLabelingSchemeType: 

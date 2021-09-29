@@ -1,13 +1,26 @@
 ﻿using UnityEngine;
-using System.IO;
-using System.Globalization;
+using UnityEngine.Perception.GroundTruth;
+using System.Collections.Generic;
 
+/// <summary>
+/// Handles the logic to annotate all images visible by the camera.
+/// This uses custom annotations compliant with UnityPerception's
+/// framework to be automatically added to the dataset labelling file.
+/// </summary>
 public class TargetPlantCounting : MonoBehaviour
 {
     public Camera DroneCamera;
-    private Plane[] camFrustrumPlanes;
     
     public Field field_generator_ref;
+
+    public GameObject _debug_object;
+    private List<GameObject> _debug_positions_objects = new List<GameObject>();
+
+    public struct PlantAnnotation
+    {
+        public uint instance_id;
+        public Vector2 ViewPort;
+    }
 
     private void Update()
     {
@@ -37,47 +50,74 @@ public class TargetPlantCounting : MonoBehaviour
         return counter;
     }
 
-    /// <summary>
-    /// Counts the number of plants present in the screen space and generate a csv file
-    /// with all the coordinates of the plants both in world format (x and z) and viewport (x and y)
-    /// </summary>
-    /// <param name="_path_plant_position_file">Path where to write the csv file. The name of the file should be included
-    /// in that path.</param>
-    /// <returns>An integer : the number of plants</returns>
-    public int CountTargetPlants(string _path_plant_position_file)
+    public void With_Perception()
     {
         int counter = 0;
         float[] boundaries = DroneCamera.GetComponent<CameraVision>().VisionBoundariesOnField();
+        
+        DroneCamera.GetComponent<CustomAnnotation>().DefineViewPortAnnotation();
 
-        FileStream plant_pos_file = new FileStream(_path_plant_position_file, FileMode.Create);
-        StreamWriter sw = new StreamWriter(plant_pos_file);
+        List<PlantAnnotation> capture = new List<PlantAnnotation>();
 
         foreach (GameObject _targetPlant in field_generator_ref.all_target_plants)
         {
-            if ((_targetPlant.transform.position.x > boundaries[3] && _targetPlant.transform.position.x < boundaries[2]) &&
+            if (_targetPlant.activeSelf &&
+                (_targetPlant.transform.position.x > boundaries[3] && _targetPlant.transform.position.x < boundaries[2]) &&
                 (_targetPlant.transform.position.z > boundaries[1] && _targetPlant.transform.position.z < boundaries[0]))
             {
-                counter++;
-
-                //Vector2 plant_viewPort = DroneCamera.WorldToViewportPoint(_targetPlant.transform.position);
-
                 Vector3 _correctedTransform = new Vector3(_targetPlant.transform.position.x,
-                                                          _targetPlant.transform.position.y + _targetPlant.transform.localScale.y,
+                                                          _targetPlant.transform.position.y + _targetPlant.transform.localScale.y * _targetPlant.GetComponent<MeshFilter>().sharedMesh.bounds.size.y,//_targetPlant.transform.localScale.y,
                                                           _targetPlant.transform.position.z);
 
                 Vector2 _corrected_plant_ViewPort = DroneCamera.WorldToViewportPoint(_correctedTransform);
 
-                sw.WriteLine(_targetPlant.transform.position.x.ToString("G", CultureInfo.InvariantCulture) + "," +
-                             _targetPlant.transform.position.z.ToString("G", CultureInfo.InvariantCulture) + "," +
-                             //plant_viewPort.x.ToString("G", CultureInfo.InvariantCulture) + "," +
-                             //plant_viewPort.y.ToString("G", CultureInfo.InvariantCulture) + "," +
-                             _corrected_plant_ViewPort.x.ToString("G", CultureInfo.InvariantCulture) + "," +
-                             _corrected_plant_ViewPort.y.ToString("G", CultureInfo.InvariantCulture));
+                if (0 < _corrected_plant_ViewPort.x && _corrected_plant_ViewPort.x < 1 &&
+                     0 < _corrected_plant_ViewPort.y && _corrected_plant_ViewPort.y < 1)
+                {
+                    counter++;
+
+                    capture.Add(new PlantAnnotation {
+                                        instance_id = _targetPlant.GetComponent<Labeling>().instanceId,
+                                        ViewPort = _corrected_plant_ViewPort}
+                    );
+                }
             }
         }
 
-        sw.Close();
+        DroneCamera.GetComponent<PerceptionCamera>().RequestCapture();
+        DroneCamera.GetComponent<CustomAnnotation>().ApplyViewPortAnnotation(capture);
+    }
 
-        return counter;
+    public void ShowDebugPositions()
+    {
+        DestroyDebugPositions();
+
+        float[] boundaries = DroneCamera.GetComponent<CameraVision>().VisionBoundariesOnField();
+        _debug_positions_objects = new List<GameObject>();
+        foreach (GameObject _targetPlant in field_generator_ref.all_target_plants)
+        {
+            if (_targetPlant.activeSelf &&
+                (_targetPlant.transform.position.x > boundaries[3] && _targetPlant.transform.position.x < boundaries[2]) &&
+                (_targetPlant.transform.position.z > boundaries[1] && _targetPlant.transform.position.z < boundaries[0]))
+            {
+
+                //Debug.Log(_targetPlant.GetComponent<MeshFilter>().sharedMesh.bounds.size.y);
+                Vector3 _correctedTransform = new Vector3(_targetPlant.transform.position.x,
+                                                          _targetPlant.transform.position.y + 
+                                                          _targetPlant.transform.localScale.y * _targetPlant.GetComponent<MeshFilter>().sharedMesh.bounds.size.y,//_targetPlant.transform.localScale.y,
+                                                          _targetPlant.transform.position.z);
+
+                GameObject _debug = Instantiate(_debug_object, _correctedTransform, Quaternion.identity);
+                _debug_positions_objects.Add(_debug);
+            }
+        }
+    }
+
+    public void DestroyDebugPositions()
+    {
+        foreach(GameObject _g in _debug_positions_objects)
+        {
+            DestroyImmediate(_g);
+        }
     }
 }
