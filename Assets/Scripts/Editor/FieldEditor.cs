@@ -253,6 +253,11 @@ public class FieldEditor : Editor
                         EditorGUILayout.PropertyField(serializedObject.FindProperty("crop_plant_position_radius"),
                         new GUIContent("Position radius", "Simulates the radius of the circle in which the seed has fallen."));
                         break;
+
+                    case (2):  // Bezier
+                        EditorGUILayout.PropertyField(serializedObject.FindProperty("crop_plants_average_spacing"),
+                        new GUIContent("Average spacing", "Simulates the general space between plants in the same crops rows."));
+                        break;
                 }
             }
         }
@@ -426,7 +431,7 @@ public class FieldEditor : Editor
 
                     }
                 }
-                else
+                else if (serializedObject.FindProperty("crops_rows_GenMode").enumValueIndex == 1)
                 {
                     EditorGUILayout.PropertyField(serializedObject.FindProperty("crop_rows_average_direction"), new GUIContent("Average angle",
                     "Simulates the average direction of the seader building the crops rows of the field."));
@@ -450,6 +455,21 @@ public class FieldEditor : Editor
                         EditorGUILayout.PropertyField(serializedObject.FindProperty("crop_rows_spacing_between_seader_passes_random"),
                             new GUIContent("Variability", "Introduces variability on the seader passes average spacing. The variability" +
                             "is a percentage of the average."));
+                    }
+                }
+
+                else
+                {
+                    EditorGUILayout.PropertyField(serializedObject.FindProperty("bezier_origin"),
+                        new GUIContent("Original Row", "The Bezier curve that is used to generate all the other rows by translating it."));
+                    EditorGUILayout.PropertyField(serializedObject.FindProperty("nb_bezier_rows"),
+                        new GUIContent("Number of rows", "Number of rows to generate."));
+                    EditorGUILayout.PropertyField(serializedObject.FindProperty("crop_rows_average_spacing"), new GUIContent("Average spacing",
+                        "Simulates the general space between crop rows."));
+                    using (new EditorGUI.IndentLevelScope())
+                    {
+                        EditorGUILayout.PropertyField(serializedObject.FindProperty("crop_rows_spacing_random"), new GUIContent("Variability",
+                        "Introduces variability in the space between crops rows. This variability is introduced between two consecutive crops rows."));
                     }
                 }
             }

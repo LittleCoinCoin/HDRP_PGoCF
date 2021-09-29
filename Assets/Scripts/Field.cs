@@ -27,7 +27,7 @@ public class Field : MonoBehaviour
     private int counter_growth_stages;
 
     //Instantiation mode of the crop rows.
-    public enum GenerationMode { LinearV1, LinearSeaderDrill }//, RS_Curved}
+    public enum GenerationMode { LinearV1, LinearSeaderDrill, RS_Curved}
     public GenerationMode crops_rows_GenMode = GenerationMode.LinearV1;
 
     //Number of rows in the seeder drill
@@ -87,6 +87,13 @@ public class Field : MonoBehaviour
     [Range(0f, 1f)] public float[] plant_Yscale_random = new float[1];
     [Min(0f)] public float[] plant_average_radius = new float[1];
     [Range(0f, 1f)] public float[] plant_radius_random = new float[1];
+
+    // Bezier rows 
+    public GameObject bezier_origin;
+    public List<GameObject> bezier_rows_list;
+    public int nb_bezier_rows;
+    public float bezier_resolution = 5f;
+    public List<GameObject> map_crop_to_row;
 
     //List of the plants in the field
     public List<GameObject> all_target_plants;
@@ -182,15 +189,13 @@ public class Field : MonoBehaviour
         {
             case GenerationMode.LinearV1:
                 GeneratePlantCoordinates_LinearV1();
-                //SpawnPlants_LinearV1();
                 break;
             case GenerationMode.LinearSeaderDrill:
                 GeneratePlantCoordinates_LinearSeaderDrill();
-                //SpawnPlants_LinearSeaderDrill();
                 break;
-            //case (GenerationMode.RS_Curved):
-            //    SpawnPlants_();
-            //    break;
+            case (GenerationMode.RS_Curved):
+                GeneratePlantsCoordinates_BezierRows();
+                break;
         }
 
         //iterate the growth probabilities to alter the structure of the field
@@ -244,6 +249,13 @@ public class Field : MonoBehaviour
         }
         instantiated_field_holder = Instantiate(field_holder);
         instantiated_field_holder.transform.position = Vector3.zero;
+
+        if (crops_rows_GenMode == GenerationMode.RS_Curved)
+        {
+            // to keep a trace of the current rows
+            bezier_rows_list = new List<GameObject>();
+            map_crop_to_row = new List<GameObject>();
+        }
     }
 
     /// <summary>
@@ -372,6 +384,116 @@ public class Field : MonoBehaviour
             {
                 b += crop_rows_spacing_in_seader_drill;
                 crop_rows_counter++;
+            }
+        }
+    }
+
+    /// <summary>
+    /// Curved
+    /// Generate Bezier rows using the origin row attribute. It is computed prior to the estimation of crops positions
+    /// </summary>
+    private void GenerateBezierRows()
+    {
+        // Get the points list of the origin row
+        PathCreator pc = bezier_origin.GetComponent<PathCreator>();
+        field_monitoring_all_plants_status = new List<AllPlantStatus>();
+        Path p = pc.path;
+        List<Vector3> points = pc.path.Points;
+
+        // get the direction of translation = ORTHOGONAL to the row axis (x_f - x_0)
+        Vector3 direction = Vector3.Cross(points[0] - points[points.Count - 1], Vector3.up).normalized;
+        Vector3 delta = direction * crop_rows_average_spacing;
+
+        Vector3 translation = Vector3.zero;
+        int idx = 0;
+        bool pos_side = true;
+        // instantiate duplications of the row
+        while (idx < nb_bezier_rows)
+        {
+            // creating the GO on the positive side
+            GameObject new_row = new GameObject("Row" + idx);
+            new_row.AddComponent<PathCreator>();
+            new_row.GetComponent<PathCreator>().CreatePath(p);
+
+            if (pos_side)
+            {
+                new_row.GetComponent<PathCreator>().TranslatePath(translation);
+                pos_side = false;
+                translation += delta;
+            }
+            else
+            {
+                new_row.GetComponent<PathCreator>().TranslatePath(-translation);
+                pos_side = true;
+            }
+            new_row.transform.parent = instantiated_field_holder.transform;
+            bezier_rows_list.Add(new_row);
+
+            idx++;
+        }
+    }
+
+    /// <summary>
+    /// Curved
+    /// Instatiates evenly spaced plants along the Bezier curve.
+    /// </summary>
+    private void GeneratePlantsCoordinates_BezierRows()
+    {
+        all_plants_coordinates = new List<Vector2>();
+        all_target_plants = new List<GameObject>();
+
+        // translation of the original row to generate all the others
+        GenerateBezierRows();
+
+        // iterate on each row to generate evenly spaced crops
+        for (int i = 0; i < bezier_rows_list.Count; i++)
+        {
+            GameObject row = bezier_rows_list[i];
+            Path path = row.GetComponent<PathCreator>().path;
+            if (CheckInsideField(path.Points[0].x, path.Points[0].z))
+            {
+                all_plants_coordinates.Add(new Vector2(path.Points[0].x, path.Points[0].z));
+                map_crop_to_row.Add(row);
+            }
+            Vector3 previous_point = path.Points[0];
+            float distance_since_last_even_point = 0;
+
+            for (int segment_index = 0; segment_index < path.NumSegments; segment_index++)
+            {
+                Vector3[] p = path.GetPointsInSegment(segment_index);
+
+                // estimate the distance between two anchor points, following the Bezier curve
+                float control_net_length = Vector3.Distance(p[0], p[1]) + Vector3.Distance(p[1], p[2]) + Vector3.Distance(p[2], p[3]);
+                float estimated_curve_length = Vector3.Distance(p[0], p[3]) + 0.5f * control_net_length;
+                int divisions = Mathf.CeilToInt(estimated_curve_length * bezier_resolution * 10);
+                float t = 0;
+
+                // generate each evenly spaced point between the two anchors
+                while (t <= 1)
+                {
+                    t += 1f / divisions;
+                    Vector3 point_on_curve = Bezier.EvaluateCubic(p[0], p[1], p[2], p[3], t);
+                    distance_since_last_even_point += Vector3.Distance(previous_point, point_on_curve);
+
+                    while (distance_since_last_even_point >= crop_plants_average_spacing)
+                    {
+                        float overshoot_dist = distance_since_last_even_point - crop_plants_average_spacing;
+                        Vector3 new_evenly_spaced_point = point_on_curve + (previous_point - point_on_curve).normalized * overshoot_dist;
+                        new_evenly_spaced_point.y = 0;
+                        Vector2 new_evenly_spaced_point2D = new Vector2(new_evenly_spaced_point.x, new_evenly_spaced_point.z);
+
+                        if (CheckInsideField(new_evenly_spaced_point.x, new_evenly_spaced_point.z))
+                        {  // don't add new point if it is outside the field
+                            all_plants_coordinates.Add(new_evenly_spaced_point2D);
+                            map_crop_to_row.Add(row);
+                        }
+
+                        distance_since_last_even_point = overshoot_dist;
+                        previous_point = new_evenly_spaced_point;
+                    }
+
+                    previous_point = point_on_curve;
+                }
             }
         }
     }
