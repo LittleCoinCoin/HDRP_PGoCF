@@ -10,19 +10,19 @@ Material:
   m_Name: DryRockyDirt
   m_Shader: {fileID: -6465566751694194690, guid: 30b263345c65eba479712853c5785c9e,
     type: 3}
-  m_ShaderKeywords: _DISABLE_SSR
+  m_ShaderKeywords: _DISABLE_SSR _DISABLE_SSR_TRANSPARENT
   m_LightmapFlags: 4
   m_EnableInstancingVariants: 0
   m_DoubleSidedGI: 0
-  m_CustomRenderQueue: -1
+  m_CustomRenderQueue: 2225
   stringTagMap:
     MotionVector: User
   disabledShaderPasses:
   - MOTIONVECTORS
-  - DistortionVectors
+  - TransparentBackface
   - TransparentDepthPrepass
   - TransparentDepthPostpass
-  - TransparentBackface
+  - RayTracingPrepass
   m_SavedProperties:
     serializedVersion: 3
     m_TexEnvs:
@@ -106,7 +106,15 @@ Material:
         m_Texture: {fileID: 2800000, guid: 133dc91bc0027424f846f4cff389cb9f, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
+    - _Texture2DAsset_1ba3a4a42917988fb5b45a19e7cf4243_Out_0:
+        m_Texture: {fileID: 2800000, guid: 2161ba133e4339643a2a41e132531c56, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
     - _Texture2DAsset_29CA8C02_Out_0:
+        m_Texture: {fileID: 2800000, guid: ae834f1f24a1f1f459d07aae04d05eb1, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _Texture2DAsset_40b1c28b43aeab8cb97977803629eb46_Out_0:
         m_Texture: {fileID: 2800000, guid: ae834f1f24a1f1f459d07aae04d05eb1, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
@@ -114,8 +122,16 @@ Material:
         m_Texture: {fileID: 2800000, guid: d48b0ca5ba64be44396e2336c27b3c4b, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
+    - _Texture2DAsset_80edb785b2207b8e8ac325c82bbb90a6_Out_0:
+        m_Texture: {fileID: 2800000, guid: 133dc91bc0027424f846f4cff389cb9f, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
     - _Texture2DAsset_C4F6E0DA_Out_0:
         m_Texture: {fileID: 2800000, guid: 2161ba133e4339643a2a41e132531c56, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _Texture2DAsset_e066c9dfa470be8a8b7a3cd44523c297_Out_0:
+        m_Texture: {fileID: 2800000, guid: d48b0ca5ba64be44396e2336c27b3c4b, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _ThicknessMap:
@@ -123,6 +139,18 @@ Material:
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _TransmittanceColorMap:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - unity_Lightmaps:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - unity_LightmapsInd:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - unity_ShadowMasks:
         m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
@@ -139,6 +167,8 @@ Material:
     - _AlphaCutoffShadow: 0.5
     - _AlphaDstBlend: 0
     - _AlphaSrcBlend: 1
+    - _AlphaToMask: 0
+    - _AlphaToMaskInspectorValue: 0
     - _Anisotropy: 0
     - _BlendMode: 0
     - _CoatMask: 0
@@ -198,12 +228,15 @@ Material:
     - _Metallic: 0
     - _NormalMapSpace: 0
     - _NormalScale: 1
+    - _OpaqueCullMode: 2
     - _PPDLodThreshold: 5
     - _PPDMaxSamples: 15
     - _PPDMinSamples: 5
     - _PPDPrimitiveLength: 1
     - _PPDPrimitiveWidth: 1
+    - _RayTracing: 0
     - _ReceivesSSR: 0
+    - _ReceivesSSRTransparent: 0
     - _RefractionModel: 0
     - _RenderQueueType: 1
     - _RequireSplitLighting: 0
@@ -272,6 +305,7 @@ Material:
     - _UVMappingMaskEmissive: {r: 1, g: 0, b: 0, a: 0}
     - _Vector2Tiling: {r: 2, g: 2, b: 0, a: 0}
     - _Vector2TilingOffset: {r: 0, g: 0, b: 0, a: 0}
+  m_BuildTextureStacks: []
 --- !u!114 &1411926134974677737
 MonoBehaviour:
   m_ObjectHideFlags: 11
@@ -284,4 +318,4 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: da692e001514ec24dbc4cca1949ff7e8, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  version: 2
+  version: 11
