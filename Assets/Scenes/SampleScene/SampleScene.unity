@@ -24,7 +24,7 @@ RenderSettings:
   m_AmbientEquatorColor: {r: 0.114, g: 0.125, b: 0.133, a: 1}
   m_AmbientGroundColor: {r: 0.047, g: 0.043, b: 0.035, a: 1}
   m_AmbientIntensity: 1
-  m_AmbientMode: 0
+  m_AmbientMode: 4
   m_SubtractiveShadowColor: {r: 0.42, g: 0.478, b: 0.627, a: 1}
   m_SkyboxMaterial: {fileID: 0}
   m_HaloStrength: 0.5
@@ -50423,9 +50423,15 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4467405dbcbd3d64ab4363e9ae8bb813, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  m_CameraSensor:
+    rid: 5427034973442932736
   m_Labelers:
-  - id: 0
-  - id: 1
+  - rid: 0
+  - rid: 1
+  m_LayerMask:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  id: camera
   description: 
   captureRgbImages: 1
   firstCaptureFrame: 0
@@ -50434,24 +50440,33 @@ MonoBehaviour:
   simulationDeltaTime: 0.0166
   framesBetweenCaptures: 60
   showVisualizations: 0
+  alphaThreshold: 0.1
+  overrideLayerMask: 0
+  useAccumulation: 0
   references:
-    version: 1
-    00000000:
-      type: {class: BoundingBox2DLabeler, ns: UnityEngine.Perception.GroundTruth,
+    version: 2
+    RefIds:
+    - rid: 0
+      type: {class: BoundingBox2DLabeler, ns: UnityEngine.Perception.GroundTruth.Labelers,
         asm: Unity.Perception.Runtime}
       data:
         enabled: 1
         annotationId: f9f22e05-443f-4602-a422-ebe4ea9b55cb
         idLabelConfig: {fileID: 11400000, guid: f4ba0114845b9e34284f41b97ee7ab0b,
           type: 2}
-    00000001:
-      type: {class: RenderedObjectInfoLabeler, ns: UnityEngine.Perception.GroundTruth,
+    - rid: 1
+      type: {class: RenderedObjectInfoLabeler, ns: UnityEngine.Perception.GroundTruth.Labelers,
         asm: Unity.Perception.Runtime}
       data:
         enabled: 1
         objectInfoMetricId: 5ba92024-b3b7-41a7-9d3f-c03a6a8ddd01
         idLabelConfig: {fileID: 11400000, guid: f4ba0114845b9e34284f41b97ee7ab0b,
           type: 2}
+    - rid: 5427034973442932736
+      type: {class: UnityCameraSensor, ns: UnityEngine.Perception.GroundTruth.Sensors,
+        asm: Unity.Perception.Runtime}
+      data:
+        superSamplingFactor: 1
 --- !u!1 &297011249
 GameObject:
   m_ObjectHideFlags: 0
@@ -59882,15 +59897,15 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   path:
     points:
-    - {x: 15.118027, y: 0.24593353, z: 15.025228}
-    - {x: 8.213879, y: 0.29677773, z: 12.900148}
-    - {x: 9.084757, y: 0.6709671, z: 6.325909}
-    - {x: 4.8593903, y: 0.6796074, z: 5.9607906}
-    - {x: -4.0568075, y: 0.6978398, z: 5.1903324}
-    - {x: -3.4487052, y: 0.43248367, z: -3.249702}
-    - {x: -4.790196, y: 0.46860886, z: -4.7648325}
+    - {x: 15.12, y: 0.25, z: 15.03}
+    - {x: 7.1064453, y: 1.1054688, z: 11.018555}
+    - {x: 13.47749, y: 4.063141, z: 9.129568}
+    - {x: 4.618408, y: 4.0351562, z: 6.9003906}
+    - {x: -7.1293945, y: 3.9980469, z: 3.944336}
+    - {x: 1.1801758, y: -0.7988281, z: -0.49023438}
+    - {x: -4.959961, y: 0.4140625, z: -4.7021484}
     initial_point: {x: 15.12, y: 0.25, z: 15.03}
-    final_point: {x: -4.79, y: 0.47, z: -4.76}
+    final_point: {x: -4.96, y: 0.41, z: -4.7}
     auto_set_control_points: 0
     field: {fileID: 568471275}
     corner_list: []
@@ -59898,7 +59913,7 @@ MonoBehaviour:
     nbr: 0
     ird: 0
   init_point: {x: 15.12, y: 0.25, z: 15.03}
-  end_point: {x: -4.79, y: 0.47, z: -4.76}
+  end_point: {x: -4.96, y: 0.41, z: -4.7}
   nb_rows: 0
   inter_row_distance: 0
   field: {fileID: 568471275}
@@ -84871,6 +84886,70 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 486241329}
   m_Mesh: {fileID: 3435369040858636224, guid: 3f167b49fd8669749ac21b785848e0d9, type: 3}
+--- !u!1 &486294101
+GameObject:
+  m_ObjectHideFlags: 3
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 486294103}
+  - component: {fileID: 486294102}
+  m_Layer: 0
+  m_Name: _PerceptionSettings
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &486294102
+MonoBehaviour:
+  m_ObjectHideFlags: 3
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 486294101}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c5ee903ff896bde4bb82aed4aec2bf61, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  consumerEndpoint:
+    rid: 5427034977127628800
+  accumulationSettings:
+    rid: 5427034973442932738
+  references:
+    version: 2
+    RefIds:
+    - rid: 5427034973442932738
+      type: {class: AccumulationSettings, ns: UnityEngine.Perception.Settings, asm: Unity.Perception.Runtime}
+      data:
+        accumulationSamples: 256
+        shutterInterval: 0
+        shutterFullyOpen: 0
+        shutterBeginsClosing: 1
+        adaptFixedLengthScenarioFrames: 1
+    - rid: 5427034977127628800
+      type: {class: SoloEndpoint, ns: UnityEngine.Perception.GroundTruth.Consumers,
+        asm: Unity.Perception.Runtime}
+      data:
+        soloDatasetName: solo
+--- !u!4 &486294103
+Transform:
+  m_ObjectHideFlags: 3
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 486294101}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &488036454
 GameObject:
   m_ObjectHideFlags: 0
@@ -189390,13 +189469,15 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_Randomizers: []
+  configuration: {fileID: 0}
   constants:
     randomSeed: 539662031
     ref_Field: {fileID: 568471276}
     ref_MetaImageCature: {fileID: 1026090280}
     NumberOfFields: 1
   references:
-    version: 1
+    version: 2
+    RefIds: []
 --- !u!4 &1026090279
 Transform:
   m_ObjectHideFlags: 0
@@ -189429,8 +189510,8 @@ MonoBehaviour:
   GridSubsetCapture: 1
   minWidthGridSubset: 1
   maxWidthGridSubset: 2
-  minHeightGridSubset: 0
-  maxHeightGridSubset: 4
+  minHeightGridSubset: 1
+  maxHeightGridSubset: 2
   CaptureOrder: 0
   CaptureDone: 0
 --- !u!1 &1027965603
@@ -394499,3 +394580,4 @@ SceneRoots:
   - {fileID: 1026090279}
   - {fileID: 355352071}
   - {fileID: 1694418481}
+  - {fileID: 486294103}
