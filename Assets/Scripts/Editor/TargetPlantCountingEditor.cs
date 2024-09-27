@@ -14,7 +14,12 @@ public class TargetPlantCountingEditor : Editor
 
         base.OnInspectorGUI();
 
-        if (GUILayout.Button("Show Debug Positions"))
+        if(GUILayout.Button("Count Target Plants"))
+		{
+			Debug.Log($"{_ref_targetPlantCounting.CountTargetPlants()} plants visible on Drone camera");
+		}
+
+		if (GUILayout.Button("Show Debug Positions"))
         {
             _ref_targetPlantCounting.ShowDebugPositions();
         }
@@ -23,5 +28,12 @@ public class TargetPlantCountingEditor : Editor
         {
             _ref_targetPlantCounting.DestroyDebugPositions();
         }
-    }
+
+        GUILayout.Space(10);
+
+		if (GUILayout.Button("Capture with Perception"))
+		{
+			_ref_targetPlantCounting.With_Perception();
+		}
+	}
 }

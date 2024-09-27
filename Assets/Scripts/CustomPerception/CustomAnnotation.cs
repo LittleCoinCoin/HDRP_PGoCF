@@ -1,30 +1,45 @@
 ﻿using System;
-using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.Perception.GroundTruth;
+using UnityEngine.Perception.GroundTruth.DataModel;
 
-public class CustomAnnotation : MonoBehaviour
+
+class PlantViewPortAnnotationDef : AnnotationDefinition
 {
-    private AnnotationDefinition plantAnnotationDefinition;
-    
-    public void DefineViewPortAnnotation()
-    {
-        plantAnnotationDefinition = DatasetCapture.RegisterAnnotationDefinition(
-            "View_Port_Position",
-            "The position relative to the screen",
-            id: Guid.Parse("C0B4A22C-0420-4D9F-BAFC-954B8F7B35A7"));
-    }
+	public PlantViewPortAnnotationDef(string id)
+		: base(id) { }
 
-    public void ApplyViewPortAnnotation(List<TargetPlantCounting.PlantAnnotation> _capture)
-    {
-        SensorHandle sensorHandle = GetComponent<PerceptionCamera>().SensorHandle;
-        
-        if (sensorHandle.ShouldCaptureThisFrame)
-        {
-            //Debug.Log("ShouldCapture");
-            AsyncAnnotation asyncplantAnnotationDefinition = sensorHandle.ReportAnnotationAsync(plantAnnotationDefinition);
+	public override string modelType => "Plant Viewport Annotation Def";
+	public override string description => "The position of the target plant in the camera's local space as a proportion of width (x) and height (y)";
+}
 
-            asyncplantAnnotationDefinition.ReportValues(_capture);
-        }
-    }
+struct PlantViewPortAnnotationData
+{
+	public uint instance_id;
+	public Vector2 ViewPort;
+}
+
+[Serializable]
+class PlantViewPortAnnotation : Annotation
+{
+	public PlantViewPortAnnotationData[] plantViewPortAnnotations;
+	public PlantViewPortAnnotation(AnnotationDefinition _definition, string _sensorId, PlantViewPortAnnotationData[] _plantViewPortAnnotations)
+		: base(_definition, _sensorId)
+	{
+		plantViewPortAnnotations = _plantViewPortAnnotations;
+	}
+
+	public override void ToMessage(IMessageBuilder builder)
+	{
+		base.ToMessage(builder);
+
+		for (int i = 0; i < plantViewPortAnnotations.Length; i++)
+		{
+			IMessageBuilder values = builder.AddNestedMessageToVector("values");
+			values.AddUInt("Plant instance ID", plantViewPortAnnotations[i].instance_id);
+			values.AddFloatArray("Plant position", MessageBuilderUtils.ToFloatVector(plantViewPortAnnotations[i].ViewPort));
+		}
+	}
+
+	public override bool IsValid() => true;
+
 }
